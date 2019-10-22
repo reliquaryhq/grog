@@ -13,5 +13,8 @@
   ],
   "author": "Reliquary Contributors",
   "license": "MIT",
-  "repository": "github:reliquaryhq/grog"
+  "repository": "github:reliquaryhq/grog",
+  "devDependencies": {
+    "eslint": "6.5.1"
+  }
 }
