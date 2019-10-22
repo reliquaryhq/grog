@@ -1,7 +1,7 @@
 {
   "name": "@reliquaryhq/grog",
   "version": "0.1.0",
-  "description": "A CLI for GOG",
+  "description": "An unofficial CLI for GOG",
   "bin": {
     "grog": "./src/grog.mjs"
   },

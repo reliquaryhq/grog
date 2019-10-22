@@ -1,6 +1,6 @@
 # grog
 
-Welcome to Grog, the unofficial CLI for GOG.
+Welcome to Grog, an unofficial CLI for GOG.
 
 Grog makes it easy to mirror owned content from GOG.
 
