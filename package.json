@@ -2,7 +2,9 @@
   "name": "@reliquaryhq/grog",
   "version": "0.1.0",
   "description": "A CLI for GOG",
-  "main": "index.js",
+  "bin": {
+    "grog": "./src/grog.mjs"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
