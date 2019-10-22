@@ -10,5 +10,6 @@
     "GOG"
   ],
   "author": "Reliquary Contributors",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": "github:reliquaryhq/grog"
 }
