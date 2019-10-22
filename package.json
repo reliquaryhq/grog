@@ -6,6 +6,7 @@
     "grog": "./src/grog.mjs"
   },
   "scripts": {
+    "lint": "eslint --ext js,mjs src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
