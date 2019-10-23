@@ -9,6 +9,7 @@
     "sourceType": "module"
   },
   "rules": {
+    "linebreak-style": ["error", "unix"],
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "quotes": ["error", "single"]
   }
