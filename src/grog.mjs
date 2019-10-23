@@ -1,3 +1,9 @@
 #!/usr/bin/env node --experimental-modules --no-warnings
 
-console.log('Welcome to Grog!');
+import minimist from 'minimist';
+import { handleCommand } from './cli.mjs';
+
+const argv = minimist(process.argv.slice(2));
+const { _: args, ...flags } = argv;
+
+handleCommand(args, flags).catch((error) => console.error(error));
