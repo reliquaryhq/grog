@@ -20,7 +20,8 @@
   "license": "MIT",
   "repository": "github:reliquaryhq/grog",
   "devDependencies": {
-    "eslint": "6.5.1"
+    "eslint": "6.5.1",
+    "jest": "24.9.0"
   },
   "dependencies": {
     "minimist": "1.2.0"
