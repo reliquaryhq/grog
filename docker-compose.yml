@@ -4,10 +4,10 @@ services:
     image: "postgres:12.0"
     container_name: "grog_postgres"
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${GROG_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${GROG_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${GROG_POSTGRES_DB}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${GROG_POSTGRES_PORT}:5432"
     volumes:
-      - ~/.grog/postgres:/var/lib/postgresql/data
+      - ${GROG_COMPOSE_DIR}/postgres:/var/lib/postgresql/data
