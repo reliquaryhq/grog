@@ -24,6 +24,7 @@
     "jest": "24.9.0"
   },
   "dependencies": {
+    "dotenv": "8.2.0",
     "fs-extra": "8.1.0",
     "minimist": "1.2.0",
     "slonik": "19.2.0"
