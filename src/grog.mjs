@@ -6,4 +6,6 @@ import { handleCommand } from './cli.mjs';
 const argv = minimist(process.argv.slice(2));
 const { _: args, ...flags } = argv;
 
-handleCommand(args, flags).catch((error) => console.error(error));
+handleCommand(args, flags)
+  .then(() => process.exit(0))
+  .catch((error) => console.error(error));
