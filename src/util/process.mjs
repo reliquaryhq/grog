@@ -1,4 +1,8 @@
+import dotenv from 'dotenv';
 import process from 'child_process';
+
+const config = dotenv.config();
+const env = config.parsed ? config.parsed : {};
 
 const exec = (command, options = {}) => {
   return new Promise((resolve, reject) => {
@@ -13,5 +17,6 @@ const exec = (command, options = {}) => {
 };
 
 export {
+  env,
   exec,
 };
