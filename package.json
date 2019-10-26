@@ -20,6 +20,7 @@
   "license": "MIT",
   "repository": "github:reliquaryhq/grog",
   "devDependencies": {
+    "babel-eslint": "10.0.3",
     "eslint": "6.6.0",
     "jest": "24.9.0"
   },
