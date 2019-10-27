@@ -6,7 +6,7 @@ const handleError = async (response) => {
   }
 
   const error = new Error(`${response.status} ${response.statusText}`);
-  error.url = new URL(response.url);
+  error.url = response.url;
 
   const body = await response.text();
 
