@@ -29,6 +29,7 @@
     "fs-extra": "8.1.0",
     "globby": "10.0.1",
     "minimist": "1.2.0",
+    "node-fetch": "2.6.0",
     "slonik": "19.2.0"
   }
 }
