@@ -66,7 +66,7 @@ const applyMigration = async (connection, version, direction) => {
   if (direction === 'down') {
     await migration.down(connection);
 
-    if (version >= 0) {
+    if (version > 0) {
       await connection.query(sql`DELETE FROM schema WHERE version = ${version};`);
     }
   }
