@@ -1,4 +1,4 @@
-import { sql } from '../../db.mjs';
+import { sql } from '../../util/db.mjs';
 
 const up = async (connection) => {
   return connection.query(sql`
@@ -18,6 +18,18 @@ const up = async (connection) => {
       revision_first_seen_at TIMESTAMP,
       revision_last_seen_at TIMESTAMP
     );
+
+    CREATE TABLE api_product_builds (
+      id BIGSERIAL,
+      product_id BIGINT,
+      os TEXT,
+      data JSONB,
+      raw_data JSON,
+      revision BIGINT,
+      revision_hash TEXT,
+      revision_first_seen_at TIMESTAMP,
+      revision_last_seen_at TIMESTAMP
+    );
   `);
 };
 
@@ -25,6 +37,7 @@ const down = async (connection) => {
   return connection.query(sql`
     DROP TABLE schema;
     DROP TABLE api_products;
+    DROP TABLE api_product_builds;
   `);
 }
 
