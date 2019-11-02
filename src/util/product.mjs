@@ -26,6 +26,25 @@ const getProductRevisionHash = (productData) => {
   return hashObject(normalized);
 };
 
+const getApiProductBuildsRevisionHash = (buildsData) => {
+  const normalized = sortObject(buildsData);
+
+  if (_.has(normalized, 'items')) {
+    for (const item of normalized['items']) {
+      if (_.has(item, 'urls')) {
+        // Treat urls as pathname only
+        item['urls'] = _.uniq(item['urls'].map((url) => new URL(url['url']).pathname));
+      }
+    }
+
+    // Sort item properties
+    normalized['items'] = normalized['items'].map((item) => sortObject(item));
+  }
+
+  return hashObject(normalized);
+};
+
 export {
+  getApiProductBuildsRevisionHash,
   getProductRevisionHash,
 };
