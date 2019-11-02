@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import fs from 'fs-extra';
-import { migrate, pool, sql } from '../db.mjs';
+import { migrate, pool, sql } from './db.mjs';
 
 const ensureInit = async () => {
   if (!(await fs.pathExists('.env'))) {
