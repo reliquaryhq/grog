@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs-extra';
 import { migrate, pool, sql } from '../db.mjs';
 
@@ -19,7 +20,20 @@ const ensureDb = async () => {
   await migrate();
 };
 
+const hashObject = (object) => crypto.createHash('sha256')
+  .update(JSON.stringify(object))
+  .digest('hex');
+
+const sortAsNumbers = (a, b) => a - b;
+
+const sortObject = (object) => Object.keys(object)
+  .sort()
+  .reduce((r, key) => (r[key] = object[key], r), {});
+
 export {
   ensureDb,
   ensureInit,
+  hashObject,
+  sortAsNumbers,
+  sortObject,
 };
