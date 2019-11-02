@@ -11,9 +11,9 @@ const getProductRevisionHash = (productData) => {
   }
 
   // Ignore nested dlc product data
-  if (_.has(normalized, 'dlcs')) {
+  if (_.has(normalized, 'dlcs.products')) {
     normalized['dlcs'] = {
-      'products': _.get(normalized, 'dlcs.products', [])
+      'products': _.get(normalized, 'dlcs.products')
         .map((product) => ({ 'id': product['id'] })),
     };
   }
