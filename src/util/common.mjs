@@ -24,6 +24,9 @@ const hashObject = (object) => crypto.createHash('sha256')
   .update(JSON.stringify(object))
   .digest('hex');
 
+const sleep = (milliseconds) =>
+  new Promise(resolve => setTimeout(resolve, milliseconds));
+
 const sortAsNumbers = (a, b) => a - b;
 
 const sortObject = (object) => Object.keys(object)
@@ -34,6 +37,7 @@ export {
   ensureDb,
   ensureInit,
   hashObject,
+  sleep,
   sortAsNumbers,
   sortObject,
 };
