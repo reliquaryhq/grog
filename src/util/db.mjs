@@ -59,12 +59,12 @@ const applyMigration = async (connection, version, direction) => {
   const migration = await import(migrationPath);
 
   if (direction === 'up') {
-    await migration.up(connection);
+    await migration.up(connection, sql);
     await connection.query(sql`INSERT INTO schema (version) VALUES (${version});`);
   }
 
   if (direction === 'down') {
-    await migration.down(connection);
+    await migration.down(connection, sql);
 
     if (version > 0) {
       await connection.query(sql`DELETE FROM schema WHERE version = ${version};`);

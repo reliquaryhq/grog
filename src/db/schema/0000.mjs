@@ -1,6 +1,4 @@
-import { sql } from '../../util/db.mjs';
-
-const up = async (connection) => {
+const up = async (connection, sql) => {
   return connection.query(sql`
     CREATE TABLE schema (
       version INT NOT NULL
@@ -33,7 +31,7 @@ const up = async (connection) => {
   `);
 };
 
-const down = async (connection) => {
+const down = async (connection, sql) => {
   return connection.query(sql`
     DROP TABLE schema;
     DROP TABLE api_products;
