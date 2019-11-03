@@ -5,6 +5,8 @@ import * as db from '../db.mjs';
 const handleMirrorProduct = async (_args, flags) => {
   const productId = flags['product-id'];
 
+  console.log(`Mirroring product; product: ${productId}`);
+
   const productData = await api.product.getProduct(productId);
   const productFetchedAt = new Date();
 
@@ -14,13 +16,12 @@ const handleMirrorProduct = async (_args, flags) => {
     .filter((os) => productData['content_system_compatibility'][os]);
 
   for (const os of oss) {
-    await sleep(2000);
+    await sleep(1000);
 
     const buildsData = await api.cs.getBuilds(productId, os);
     const buildsFetchedAt = new Date();
 
-    // TODO
-    // store builds
+    await db.product.createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
   }
 };
 
