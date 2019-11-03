@@ -1,36 +1,80 @@
 import { pool, sql } from '../util/db.mjs';
-import { getProductRevisionHash } from '../util/product.mjs';
+import { getApiProductBuildsRevisionHash, getApiProductRevisionHash } from '../util/product.mjs';
 
-const createOrUpdateApiProduct = async (productId, data, now) => {
-  const revisionHash = getProductRevisionHash(data);
-  const existingProduct = await getApiProduct(productId);
+const createOrUpdateApiProduct = async (productId, productData, productFetchedAt) => {
+  const revisionHash = getApiProductRevisionHash(productData);
+  const existingApiProduct = await getApiProduct(productId);
 
-  if (existingProduct) {
-    if (existingProduct['revision_hash'] === revisionHash) {
+  if (existingApiProduct) {
+    if (existingApiProduct['revision_hash'] === revisionHash) {
+      console.log(`Updating api product revision last seen at; product: ${productId}; revision: ${existingApiProduct['revision']}`);
+
       return observeApiProductRevision(
         productId,
-        existingProduct['revision'],
-        now
+        existingApiProduct['revision'],
+        productFetchedAt
       );
     } else {
+      console.log(`Creating new api product revision; product: ${productId}; revision: ${existingApiProduct['revision'] + 1}`);
+
       return createApiProductRevision(
         productId,
-        existingProduct['revision'] + 1,
-        data,
-        now
+        productData,
+        existingApiProduct['revision'] + 1,
+        productFetchedAt
       );
     }
   } else {
+    console.log(`Creating new api product; product: ${productId}`);
+
     return createApiProductRevision(
       productId,
+      productData,
       1,
-      data,
-      now
+      productFetchedAt
     );
   }
 };
 
-const createApiProductRevision = (productId, revision, data, firstSeenAt) =>
+const createOrUpdateApiProductBuilds = async (productId, buildsOs, buildsData, buildsFetchedAt) => {
+  const revisionHash = getApiProductBuildsRevisionHash(buildsData);
+  const existingApiProductBuilds = await getApiProductBuilds(productId, buildsOs);
+
+  if (existingApiProductBuilds) {
+    if (existingApiProductBuilds['revision_hash'] === revisionHash) {
+      console.log(`Updating api product builds revision last seen at; product: ${productId}; os: ${buildsOs}; revision: ${existingApiProductBuilds['revision']}`);
+
+      return observeApiProductBuildsRevision(
+        productId,
+        buildsOs,
+        existingApiProductBuilds['revision'],
+        buildsFetchedAt,
+      );
+    } else {
+      console.log(`Creating new api product builds revision; product: ${productId}; os: ${buildsOs}; revision: ${existingApiProductBuilds['revision'] + 1}`);
+
+      return createApiProductBuildsRevision(
+        productId,
+        buildsOs,
+        buildsData,
+        existingApiProductBuilds['revision'] + 1,
+        buildsFetchedAt,
+      );
+    }
+  } else {
+    console.log(`Creating new api product builds; product: ${productId}; os: ${buildsOs}`);
+
+    return createApiProductBuildsRevision(
+      productId,
+      buildsOs,
+      buildsData,
+      1,
+      buildsFetchedAt,
+    );
+  }
+};
+
+const createApiProductRevision = (productId, data, revision, firstSeenAt) =>
   pool.query(sql`
     INSERT INTO api_products (
       product_id,
@@ -49,7 +93,30 @@ const createApiProductRevision = (productId, revision, data, firstSeenAt) =>
       ${JSON.stringify(data)},
       ${JSON.stringify(data)},
       ${revision},
-      ${getProductRevisionHash(data)},
+      ${getApiProductRevisionHash(data)},
+      ${firstSeenAt.toISOString()},
+      ${firstSeenAt.toISOString()}
+    );
+  `);
+
+const createApiProductBuildsRevision = (productId, os, data, revision, firstSeenAt) =>
+  pool.query(sql`
+    INSERT INTO api_product_builds (
+      product_id,
+      os,
+      data,
+      raw_data,
+      revision,
+      revision_hash,
+      revision_first_seen_at,
+      revision_last_seen_at
+    ) VALUES (
+      ${productId},
+      ${os},
+      ${JSON.stringify(data)},
+      ${JSON.stringify(data)},
+      ${revision},
+      ${getApiProductBuildsRevisionHash(data)},
       ${firstSeenAt.toISOString()},
       ${firstSeenAt.toISOString()}
     );
@@ -67,6 +134,20 @@ const getApiProduct = async (productId) =>
     );
   `)).rows[0];
 
+const getApiProductBuilds = async (productId, os) =>
+  (await pool.query(sql`
+    SELECT *
+    FROM api_product_builds
+    WHERE product_id = ${productId}
+    AND os = ${os}
+    AND revision = (
+      SELECT max(revision)
+      FROM api_product_builds
+      WHERE product_id = ${productId}
+      AND os = ${os}
+    );
+  `)).rows[0];
+
 const observeApiProductRevision = (productId, revision, lastSeenAt) =>
   pool.query(sql`
     UPDATE api_products
@@ -75,7 +156,17 @@ const observeApiProductRevision = (productId, revision, lastSeenAt) =>
     AND revision = ${revision};
   `);
 
+const observeApiProductBuildsRevision = (productId, os, revision, lastSeenAt) =>
+  pool.query(sql`
+    UPDATE api_product_builds
+    SET revision_last_seen_at = ${lastSeenAt.toISOString()}
+    WHERE product_id = ${productId}
+    AND os = ${os}
+    AND revision = ${revision};
+  `);
+
 export {
   createOrUpdateApiProduct,
+  createOrUpdateApiProductBuilds,
   getApiProduct,
 };
