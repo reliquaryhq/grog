@@ -26,22 +26,29 @@ const getProductRevisionHash = (productData) => {
   return hashObject(normalized);
 };
 
-const getApiProductBuildsRevisionHash = (buildsData) => {
-  const normalized = sortObject(buildsData);
+const normalizeApiProductBuildItem = (item) => {
+  const normalized = sortObject(item);
 
-  if (_.has(normalized, 'items')) {
-    for (const item of normalized['items']) {
-      if (_.has(item, 'urls')) {
-        // Treat urls as pathname only
-        item['urls'] = _.uniq(item['urls'].map((url) => new URL(url['url']).pathname));
-      }
-    }
-
-    // Sort item properties
-    normalized['items'] = normalized['items'].map((item) => sortObject(item));
+  if (_.has(normalized, 'urls')) {
+    // Treat urls as pathname only
+    normalized['urls'] = _.uniq(normalized['urls'].map((url) => new URL(url['url']).pathname))
   }
 
-  return hashObject(normalized);
+  return normalized;
+};
+
+const normalizeApiProductBuilds = (builds) => {
+  const normalized = sortObject(builds);
+
+  if (_.has(normalized, 'items')) {
+    normalized['items'] = normalized['items'].map((item) => normalizeApiProductBuildItem(item));
+  }
+
+  return normalized;
+};
+
+const getApiProductBuildsRevisionHash = (builds) => {
+  return hashObject(normalizeApiProductBuilds(builds));
 };
 
 export {
