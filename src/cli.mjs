@@ -1,6 +1,7 @@
 import { handleCompose } from './cli/compose.mjs';
 import { handleInit } from './cli/init.mjs';
 import { handleMirror } from './cli/mirror.mjs';
+import { handleRead } from './cli/read.mjs';
 
 const handleCommand = async ([command, ...args], flags) => {
   switch (command) {
@@ -14,6 +15,10 @@ const handleCommand = async ([command, ...args], flags) => {
 
     case 'mirror': {
       return handleMirror(args, flags);
+    }
+
+    case 'read': {
+      return handleRead(args, flags);
     }
 
     default: {
