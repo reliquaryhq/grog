@@ -169,4 +169,5 @@ export {
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
   getApiProduct,
+  getApiProductBuilds,
 };
