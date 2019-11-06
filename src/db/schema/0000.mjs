@@ -6,7 +6,7 @@ const up = async (connection, sql) => {
 
     CREATE TABLE api_products (
       id BIGSERIAL,
-      product_id BIGINT,
+      product_id BIGINT NOT NULL,
       title TEXT,
       slug TEXT,
       data JSONB,
@@ -18,7 +18,7 @@ const up = async (connection, sql) => {
 
     CREATE TABLE api_product_builds (
       id BIGSERIAL,
-      product_id BIGINT,
+      product_id BIGINT NOT NULL,
       os TEXT,
       data JSONB,
       revision BIGINT,
