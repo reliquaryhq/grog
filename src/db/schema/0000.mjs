@@ -36,8 +36,10 @@ const up = async (connection, sql) => {
       actual_md5 TEXT,
       expected_size BIGINT,
       actual_size BIGINT,
-      is_mirrored BOOLEAN,
-      is_verified BOOLEAN
+      is_downloaded BOOLEAN,
+      is_verified BOOLEAN,
+      created_at TIMESTAMP,
+      updated_at TIMESTAMP
     );
   `);
 };
