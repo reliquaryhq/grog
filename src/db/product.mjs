@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { pool, sql } from '../util/db.mjs';
 import { getApiProductBuildsRevisionHash, getApiProductRevisionHash } from '../util/product.mjs';
 
@@ -148,6 +149,29 @@ const getApiProductBuilds = async (productId, os) =>
     );
   `)).rows[0];
 
+const getAllApiProductBuildRepositoryPaths = async () => {
+  const query = await pool.query(sql`
+    SELECT distinct(urls ->> 'url')
+    AS url
+    FROM (
+      SELECT jsonb_array_elements(items -> 'urls')
+      AS urls
+      FROM (
+        SELECT jsonb_array_elements(data -> 'items')
+        AS items
+        FROM api_product_builds
+      ) items
+    ) urls
+    ORDER BY url desc;
+  `);
+
+  const urls = query.rows
+    .map((row) => row['url'])
+    .map((url) => new URL(url).pathname);
+
+  return _.uniq(urls).sort();
+};
+
 const observeApiProductRevision = (productId, revision, lastSeenAt) =>
   pool.query(sql`
     UPDATE api_products
@@ -168,6 +192,7 @@ const observeApiProductBuildsRevision = (productId, os, revision, lastSeenAt) =>
 export {
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
+  getAllApiProductBuildRepositoryPaths,
   getApiProduct,
   getApiProductBuilds,
 };
