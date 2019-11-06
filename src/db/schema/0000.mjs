@@ -28,6 +28,17 @@ const up = async (connection, sql) => {
       revision_first_seen_at TIMESTAMP,
       revision_last_seen_at TIMESTAMP
     );
+
+    CREATE TABLE cdn_files (
+      id BIGSERIAL,
+      path TEXT NOT NULL UNIQUE,
+      expected_md5 TEXT,
+      actual_md5 TEXT,
+      expected_size BIGINT,
+      actual_size BIGINT,
+      is_mirrored BOOLEAN,
+      is_verified BOOLEAN
+    );
   `);
 };
 
@@ -36,6 +47,7 @@ const down = async (connection, sql) => {
     DROP TABLE schema;
     DROP TABLE api_products;
     DROP TABLE api_product_builds;
+    DROP TABLE cdn_files;
   `);
 }
 
