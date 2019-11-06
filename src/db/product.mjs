@@ -149,6 +149,30 @@ const getApiProductBuilds = async (productId, os) =>
     );
   `)).rows[0];
 
+const getApiProductBuildRepositoryPaths = async (productId) => {
+  const query = await pool.query(sql`
+    SELECT distinct(urls ->> 'url')
+    AS url
+    FROM (
+      SELECT jsonb_array_elements(items -> 'urls')
+      AS urls
+      FROM (
+        SELECT jsonb_array_elements(data -> 'items')
+        AS items
+        FROM api_product_builds
+        WHERE product_id = ${productId}
+      ) items
+    ) urls
+    ORDER BY url desc;
+  `);
+
+  const urls = query.rows
+    .map((row) => row['url'])
+    .map((url) => new URL(url).pathname);
+
+  return _.uniq(urls).sort();
+};
+
 const getAllApiProductBuildRepositoryPaths = async () => {
   const query = await pool.query(sql`
     SELECT distinct(urls ->> 'url')
@@ -193,6 +217,7 @@ export {
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
   getAllApiProductBuildRepositoryPaths,
+  getApiProductBuildRepositoryPaths,
   getApiProduct,
   getApiProductBuilds,
 };
