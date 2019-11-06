@@ -6,6 +6,11 @@ const handleReadProduct = async (_args, flags) => {
 
   const product = await db.product.getApiProduct(productId);
 
+  if (!product) {
+    console.log('Product not found');
+    return;
+  }
+
   if (flags['only-data']) {
     console.log(JSON.stringify(product['data'], null, 2));
     return;
@@ -24,6 +29,11 @@ const handleReadProductBuilds = async (_args, flags) => {
   const os = flags['os'];
 
   const productBuilds = await db.product.getApiProductBuilds(productId, os);
+
+  if (!productBuilds) {
+    console.log('Product builds not found');
+    return;
+  }
 
   if (flags['only-data']) {
     console.log(JSON.stringify(productBuilds['data'], null, 2));
