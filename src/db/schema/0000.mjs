@@ -29,6 +29,7 @@ const up = async (connection, sql) => {
 
     CREATE TABLE cdn_files (
       id BIGSERIAL,
+      product_id BIGINT,
       path TEXT NOT NULL UNIQUE,
       expected_md5 TEXT,
       actual_md5 TEXT,
