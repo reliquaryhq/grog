@@ -55,26 +55,6 @@ const executeDownload = (agent, url, entry, tmpPath, onHeaders, onProgress) => {
 
       hash.on('finish', () => {
         md5 = hash.read();
-
-        if (rejecting) {
-          return;
-        }
-
-        if (entry.md5 && entry.md5 !== md5) {
-          rejecting = true;
-
-          try {
-            file.end();
-            fs.unlinkSync(tmpPath);
-          } catch (error) {
-            reject(error);
-            return;
-          }
-
-          reject(new Error(`Hash mismatch: ${entry.md5} !== ${md5}`));
-
-          return;
-        }
       });
 
       file.on('finish', () => {
@@ -95,6 +75,21 @@ const executeDownload = (agent, url, entry, tmpPath, onHeaders, onProgress) => {
           }
 
           reject(new Error(`Content length mismatch: ${size} !== ${contentLength}`));
+
+          return;
+        }
+
+        if (md5 && entry.md5 && md5 !== entry.md5) {
+          rejecting = true;
+
+          try {
+            fs.unlinkSync(tmpPath);
+          } catch (error) {
+            reject(error);
+            return;
+          }
+
+          reject(new Error(`Hash mismatch: ${md5} !== ${entry.md5}`));
 
           return;
         }
