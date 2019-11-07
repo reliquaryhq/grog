@@ -1,4 +1,7 @@
 import { ensureDb, sleep } from '../util/common.mjs';
+import DownloadQueue from '../util/DownloadQueue.mjs';
+import { downloadCdnFile } from '../util/cdn.mjs';
+import { env } from '../util/process.mjs';
 import * as api from '../api.mjs';
 import * as db from '../db.mjs';
 
@@ -23,6 +26,19 @@ const handleMirrorProduct = async (_args, flags) => {
 
     await db.product.createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
   }
+
+  const queue = new DownloadQueue('https://cdn.gog.com', env.GROG_DATA_DIR, downloadCdnFile);
+
+  for (const path of await db.product.getApiProductBuildRepositoryPaths(productId)) {
+    if (path.includes('content-system/v2/meta')) {
+      const md5 = path.split('/').slice(-1)[0];
+      queue.add({ productId, path, md5 });
+    } else {
+      queue.add({ productId, path });
+    }
+  }
+
+  await queue.run();
 };
 
 const handleMirror = async ([command, ...args], flags) => {
