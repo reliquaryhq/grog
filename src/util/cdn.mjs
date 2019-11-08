@@ -155,7 +155,7 @@ const downloadCdnFile = async (entry, downloadRoot, agent, onHeaders, onProgress
     const isDownloaded = true;
     const isVerified = (!!entry.size && entry.size === size) || (!!entry.md5 && entry.md5 === md5);
 
-    await db.cdn.createCdnFile(entry.productId, url.pathname, entry.md5, md5, entry.size, size, isDownloaded, isVerified);
+    await db.cdn.createCdnFile(entry.productId, url.pathname, md5, size, entry.md5, entry.size, isDownloaded, isVerified);
 
     return;
   }
@@ -185,7 +185,7 @@ const downloadCdnFile = async (entry, downloadRoot, agent, onHeaders, onProgress
   const isDownloaded = true;
   const isVerified = (!!entry.size && entry.size === download.size) || (!!entry.md5 && entry.md5 === download.md5);
 
-  await db.cdn.createCdnFile(entry.productId, url.pathname, entry.md5, download.md5, entry.size, download.size, isDownloaded, isVerified);
+  await db.cdn.createCdnFile(entry.productId, url.pathname, download.md5, download.size, entry.md5, entry.size, isDownloaded, isVerified);
 };
 
 export {
