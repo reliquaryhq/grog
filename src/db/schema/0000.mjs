@@ -40,6 +40,17 @@ const up = async (connection, sql) => {
       created_at TIMESTAMP,
       updated_at TIMESTAMP
     );
+
+    CREATE TABLE image_files (
+      id BIGSERIAL,
+      product_id BIGINT,
+      path TEXT NOT NULL UNIQUE,
+      md5 TEXT,
+      size BIGINT,
+      is_downloaded BOOLEAN,
+      created_at TIMESTAMP,
+      updated_at TIMESTAMP
+    );
   `);
 };
 
@@ -49,6 +60,7 @@ const down = async (connection, sql) => {
     DROP TABLE api_products;
     DROP TABLE api_product_builds;
     DROP TABLE cdn_files;
+    DROP TABLE image_files;
   `);
 }
 
