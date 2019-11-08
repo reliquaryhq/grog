@@ -140,7 +140,7 @@ const downloadCdnFile = async (entry, downloadRoot, agent, onHeaders, onProgress
     onHeaders({ 'content-length': size });
     onProgress(entry, size);
 
-    const cdnFile = await db.cdn.getCdnFile(url.pathname);
+    const cdnFile = await db.cdn.getCdnFile({ path: url.pathname });
 
     if (cdnFile) {
       if (!cdnFile['is_downloaded']) {
@@ -155,7 +155,16 @@ const downloadCdnFile = async (entry, downloadRoot, agent, onHeaders, onProgress
     const isDownloaded = true;
     const isVerified = (!!entry.size && entry.size === size) || (!!entry.md5 && entry.md5 === md5);
 
-    await db.cdn.createCdnFile(entry.productId, url.pathname, md5, size, entry.md5, entry.size, isDownloaded, isVerified);
+    await db.cdn.createCdnFile({
+      productId: entry.productId,
+      path: url.pathname,
+      md5,
+      size,
+      verifyMd5: entry.md5,
+      verifySize: entry.size,
+      isDownloaded,
+      isVerified,
+    });
 
     return;
   }
@@ -172,7 +181,7 @@ const downloadCdnFile = async (entry, downloadRoot, agent, onHeaders, onProgress
   await fs.move(tmpPath, downloadPath);
   await fs.chmod(downloadPath, 0o444);
 
-  const cdnFile = await db.cdn.getCdnFile(url.pathname);
+  const cdnFile = await db.cdn.getCdnFile({ path: url.pathname });
 
   if (cdnFile) {
     if (!cdnFile['is_downloaded']) {
@@ -185,7 +194,16 @@ const downloadCdnFile = async (entry, downloadRoot, agent, onHeaders, onProgress
   const isDownloaded = true;
   const isVerified = (!!entry.size && entry.size === download.size) || (!!entry.md5 && entry.md5 === download.md5);
 
-  await db.cdn.createCdnFile(entry.productId, url.pathname, download.md5, download.size, entry.md5, entry.size, isDownloaded, isVerified);
+  await db.cdn.createCdnFile({
+    productId: entry.productId,
+    path: url.pathname,
+    md5: download.md5,
+    size: download.size,
+    verifyMd5: entry.md5,
+    verifySize: entry.size,
+    isDownloaded,
+    isVerified,
+  });
 };
 
 export {

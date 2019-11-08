@@ -1,6 +1,15 @@
 import { pool, sql } from '../util/db.mjs';
 
-const createCdnFile = (productId, path, md5, size, verifyMd5, verifySize, isDownloaded, isVerified) =>
+const createCdnFile = ({
+  productId = null,
+  path,
+  md5 = null,
+  size = null,
+  verifyMd5 = null,
+  verifySize = null,
+  isDownloaded,
+  isVerified,
+}) =>
   pool.query(sql`
     INSERT INTO cdn_files (
       product_id,
@@ -14,12 +23,12 @@ const createCdnFile = (productId, path, md5, size, verifyMd5, verifySize, isDown
       created_at,
       updated_at
     ) VALUES (
-      ${productId || null},
+      ${productId},
       ${path},
-      ${md5 || null},
-      ${size || null},
-      ${verifyMd5 || null},
-      ${verifySize || null},
+      ${md5},
+      ${size},
+      ${verifyMd5},
+      ${verifySize},
       ${isDownloaded},
       ${isVerified},
       NOW() AT TIME ZONE 'UTC',
@@ -27,7 +36,7 @@ const createCdnFile = (productId, path, md5, size, verifyMd5, verifySize, isDown
     );
   `);
 
-const getCdnFile = async (path) =>
+const getCdnFile = async ({ path }) =>
   (await pool.query(sql`
     SELECT *
     FROM cdn_files
