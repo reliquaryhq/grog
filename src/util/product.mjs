@@ -1,5 +1,91 @@
 import _ from 'lodash';
 import { hashObject, sortObject } from './common.mjs';
+import * as db from '../db.mjs';
+
+const createOrUpdateApiProduct = async (productId, data, fetchedAt) => {
+  const revisionHash = getApiProductRevisionHash(data);
+  const existingApiProduct = await db.product.getApiProduct({ productId });
+
+  if (existingApiProduct) {
+    if (existingApiProduct['revision_hash'] === revisionHash) {
+      console.log(`Updating api product revision last seen at; product: ${productId}; revision: ${existingApiProduct['revision']}`);
+
+      return db.product.observeApiProductRevision({
+        productId,
+        revision: existingApiProduct['revision'],
+        revisionLastSeenAt: fetchedAt,
+      });
+    } else {
+      console.log(`Creating new api product revision; product: ${productId}; revision: ${existingApiProduct['revision'] + 1}`);
+
+      return db.product.createApiProductRevision({
+        productId,
+        title: data['title'],
+        slug: data['slug'],
+        data,
+        revision: existingApiProduct['revision'] + 1,
+        revisionHash,
+        revisionFirstSeenAt: fetchedAt,
+        revisionLastSeenAt: fetchedAt,
+      });
+    }
+  } else {
+    console.log(`Creating new api product; product: ${productId}`);
+
+    return db.product.createApiProductRevision({
+      productId,
+      title: data['title'],
+      slug: data['slug'],
+      data,
+      revision: 1,
+      revisionHash,
+      revisionFirstSeenAt: fetchedAt,
+      revisionLastSeenAt: fetchedAt,
+    });
+  }
+};
+
+const createOrUpdateApiProductBuilds = async (productId, os, data, fetchedAt) => {
+  const revisionHash = getApiProductBuildsRevisionHash(data);
+  const existingApiProductBuilds = await db.product.getApiProductBuilds({ productId, os });
+
+  if (existingApiProductBuilds) {
+    if (existingApiProductBuilds['revision_hash'] === revisionHash) {
+      console.log(`Updating api product builds revision last seen at; product: ${productId}; os: ${os}; revision: ${existingApiProductBuilds['revision']}`);
+
+      return db.product.observeApiProductBuildsRevision({
+        productId,
+        os,
+        revision: existingApiProductBuilds['revision'],
+        revisionLastSeenAt: fetchedAt,
+      });
+    } else {
+      console.log(`Creating new api product builds revision; product: ${productId}; os: ${os}; revision: ${existingApiProductBuilds['revision'] + 1}`);
+
+      return db.product.createApiProductBuildsRevision({
+        productId,
+        os,
+        data,
+        revision: existingApiProductBuilds['revision'] + 1,
+        revisionHash,
+        revisionFirstSeenAt: fetchedAt,
+        revisionLastSeenAt: fetchedAt,
+      });
+    }
+  } else {
+    console.log(`Creating new api product builds; product: ${productId}; os: ${os}`);
+
+    return db.product.createApiProductBuildsRevision({
+      productId,
+      os,
+      data,
+      revision: 1,
+      revisionHash,
+      revisionFirstSeenAt: fetchedAt,
+      revisionLastSeenAt: fetchedAt,
+    });
+  }
+};
 
 const normalizeApiProduct = (product) => {
   const normalized = sortObject(product);
@@ -56,6 +142,6 @@ const getApiProductBuildsRevisionHash = (builds) => {
 };
 
 export {
-  getApiProductBuildsRevisionHash,
-  getApiProductRevisionHash,
+  createOrUpdateApiProduct,
+  createOrUpdateApiProductBuilds,
 };

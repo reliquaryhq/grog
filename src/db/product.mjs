@@ -1,81 +1,16 @@
 import _ from 'lodash';
 import { pool, sql } from '../util/db.mjs';
-import { getApiProductBuildsRevisionHash, getApiProductRevisionHash } from '../util/product.mjs';
 
-const createOrUpdateApiProduct = async (productId, productData, productFetchedAt) => {
-  const revisionHash = getApiProductRevisionHash(productData);
-  const existingApiProduct = await getApiProduct(productId);
-
-  if (existingApiProduct) {
-    if (existingApiProduct['revision_hash'] === revisionHash) {
-      console.log(`Updating api product revision last seen at; product: ${productId}; revision: ${existingApiProduct['revision']}`);
-
-      return observeApiProductRevision(
-        productId,
-        existingApiProduct['revision'],
-        productFetchedAt
-      );
-    } else {
-      console.log(`Creating new api product revision; product: ${productId}; revision: ${existingApiProduct['revision'] + 1}`);
-
-      return createApiProductRevision(
-        productId,
-        productData,
-        existingApiProduct['revision'] + 1,
-        productFetchedAt
-      );
-    }
-  } else {
-    console.log(`Creating new api product; product: ${productId}`);
-
-    return createApiProductRevision(
-      productId,
-      productData,
-      1,
-      productFetchedAt
-    );
-  }
-};
-
-const createOrUpdateApiProductBuilds = async (productId, buildsOs, buildsData, buildsFetchedAt) => {
-  const revisionHash = getApiProductBuildsRevisionHash(buildsData);
-  const existingApiProductBuilds = await getApiProductBuilds(productId, buildsOs);
-
-  if (existingApiProductBuilds) {
-    if (existingApiProductBuilds['revision_hash'] === revisionHash) {
-      console.log(`Updating api product builds revision last seen at; product: ${productId}; os: ${buildsOs}; revision: ${existingApiProductBuilds['revision']}`);
-
-      return observeApiProductBuildsRevision(
-        productId,
-        buildsOs,
-        existingApiProductBuilds['revision'],
-        buildsFetchedAt,
-      );
-    } else {
-      console.log(`Creating new api product builds revision; product: ${productId}; os: ${buildsOs}; revision: ${existingApiProductBuilds['revision'] + 1}`);
-
-      return createApiProductBuildsRevision(
-        productId,
-        buildsOs,
-        buildsData,
-        existingApiProductBuilds['revision'] + 1,
-        buildsFetchedAt,
-      );
-    }
-  } else {
-    console.log(`Creating new api product builds; product: ${productId}; os: ${buildsOs}`);
-
-    return createApiProductBuildsRevision(
-      productId,
-      buildsOs,
-      buildsData,
-      1,
-      buildsFetchedAt,
-    );
-  }
-};
-
-const createApiProductRevision = (productId, data, revision, firstSeenAt) =>
+const createApiProductRevision = ({
+  productId,
+  title,
+  slug,
+  data,
+  revision,
+  revisionHash,
+  revisionFirstSeenAt,
+  revisionLastSeenAt,
+}) =>
   pool.query(sql`
     INSERT INTO api_products (
       product_id,
@@ -88,17 +23,25 @@ const createApiProductRevision = (productId, data, revision, firstSeenAt) =>
       revision_last_seen_at
     ) VALUES (
       ${productId},
-      ${data['title']},
-      ${data['slug']},
+      ${title},
+      ${slug},
       ${JSON.stringify(data)},
       ${revision},
-      ${getApiProductRevisionHash(data)},
-      ${firstSeenAt.toISOString()},
-      ${firstSeenAt.toISOString()}
+      ${revisionHash},
+      ${revisionFirstSeenAt.toISOString()},
+      ${revisionLastSeenAt.toISOString()}
     );
   `);
 
-const createApiProductBuildsRevision = (productId, os, data, revision, firstSeenAt) =>
+const createApiProductBuildsRevision = ({
+  productId,
+  os,
+  data,
+  revision,
+  revisionHash,
+  revisionFirstSeenAt,
+  revisionLastSeenAt,
+}) =>
   pool.query(sql`
     INSERT INTO api_product_builds (
       product_id,
@@ -113,13 +56,15 @@ const createApiProductBuildsRevision = (productId, os, data, revision, firstSeen
       ${os},
       ${JSON.stringify(data)},
       ${revision},
-      ${getApiProductBuildsRevisionHash(data)},
-      ${firstSeenAt.toISOString()},
-      ${firstSeenAt.toISOString()}
+      ${revisionHash},
+      ${revisionFirstSeenAt.toISOString()},
+      ${revisionLastSeenAt.toISOString()}
     );
   `);
 
-const getApiProduct = async (productId) =>
+const getApiProduct = async ({
+  productId,
+}) =>
   (await pool.query(sql`
     SELECT *
     FROM api_products
@@ -131,7 +76,10 @@ const getApiProduct = async (productId) =>
     );
   `)).rows[0];
 
-const getApiProductBuilds = async (productId, os) =>
+const getApiProductBuilds = async ({
+  productId,
+  os,
+}) =>
   (await pool.query(sql`
     SELECT *
     FROM api_product_builds
@@ -145,7 +93,9 @@ const getApiProductBuilds = async (productId, os) =>
     );
   `)).rows[0];
 
-const getApiProductBuildRepositoryPaths = async (productId) => {
+const getApiProductBuildRepositoryPaths = async ({
+  productId,
+}) => {
   const query = await pool.query(sql`
     SELECT distinct(urls ->> 'url')
     AS url
@@ -192,28 +142,39 @@ const getAllApiProductBuildRepositoryPaths = async () => {
   return _.uniq(urls).sort();
 };
 
-const observeApiProductRevision = (productId, revision, lastSeenAt) =>
+const observeApiProductRevision = ({
+  productId,
+  revision,
+  revisionLastSeenAt,
+}) =>
   pool.query(sql`
     UPDATE api_products
-    SET revision_last_seen_at = ${lastSeenAt.toISOString()}
+    SET revision_last_seen_at = ${revisionLastSeenAt.toISOString()}
     WHERE product_id = ${productId}
     AND revision = ${revision};
   `);
 
-const observeApiProductBuildsRevision = (productId, os, revision, lastSeenAt) =>
+const observeApiProductBuildsRevision = ({
+  productId,
+  os,
+  revision,
+  revisionLastSeenAt,
+}) =>
   pool.query(sql`
     UPDATE api_product_builds
-    SET revision_last_seen_at = ${lastSeenAt.toISOString()}
+    SET revision_last_seen_at = ${revisionLastSeenAt.toISOString()}
     WHERE product_id = ${productId}
     AND os = ${os}
     AND revision = ${revision};
   `);
 
 export {
-  createOrUpdateApiProduct,
-  createOrUpdateApiProductBuilds,
+  createApiProductRevision,
+  createApiProductBuildsRevision,
   getAllApiProductBuildRepositoryPaths,
   getApiProductBuildRepositoryPaths,
   getApiProduct,
   getApiProductBuilds,
+  observeApiProductRevision,
+  observeApiProductBuildsRevision,
 };
