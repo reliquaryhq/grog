@@ -41,7 +41,7 @@ const executeDownload = (agent, url, entry, tmpPath, onHeaders, onProgress) => {
         : null;
 
       const lastModified = new Date(
-        response.headers['last-modified'] || response.headers['date']
+        response.headers['last-modified'] || response.headers['date'],
       );
 
       response.pipe(hash);

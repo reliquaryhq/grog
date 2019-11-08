@@ -15,7 +15,7 @@ const PRODUCT_EXPAND = [
 const getProduct = (productId) =>
   fetch(
     `${GOG_API_URL}/products/${productId}?expand=${PRODUCT_EXPAND.join(',')}`,
-    { headers: GOG_API_HEADERS }
+    { headers: GOG_API_HEADERS },
   )
   .then(handleError)
   .then(getJson);

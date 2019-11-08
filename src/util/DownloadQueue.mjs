@@ -32,7 +32,7 @@ class DownloadQueue {
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
         name: formatFixedWidthString('', 50, 'right'),
-      }
+      },
     );
 
     const onProgress = (entry, bytes) => {
@@ -63,7 +63,7 @@ class DownloadQueue {
         this.downloadRoot,
         agent,
         onHeaders,
-        onProgress
+        onProgress,
       );
 
       progress.tick(1, {
