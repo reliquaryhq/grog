@@ -1,6 +1,7 @@
 import { ensureDb, sleep } from '../util/common.mjs';
 import DownloadQueue from '../util/DownloadQueue.mjs';
 import { downloadCdnFile } from '../util/cdn.mjs';
+import { downloadImageFile } from '../util/image.mjs';
 import { env } from '../util/process.mjs';
 import { createOrUpdateApiProduct, createOrUpdateApiProductBuilds } from '../util/product.mjs';
 import * as api from '../api.mjs';
@@ -28,18 +29,39 @@ const handleMirrorProduct = async (_args, flags) => {
     await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
   }
 
-  const queue = new DownloadQueue('https://cdn.gog.com', env.GROG_DATA_DIR, downloadCdnFile);
+  const buildRepositoryQueue = new DownloadQueue('https://cdn.gog.com', env.GROG_DATA_DIR, downloadCdnFile);
 
   for (const path of await db.product.getApiProductBuildRepositoryPaths({ productId })) {
     if (path.includes('content-system/v2/meta')) {
       const md5 = path.split('/').slice(-1)[0];
-      queue.add({ productId, path, md5 });
+      buildRepositoryQueue.add({ productId, path, md5 });
     } else {
-      queue.add({ productId, path });
+      buildRepositoryQueue.add({ productId, path });
     }
   }
 
-  await queue.run();
+  await buildRepositoryQueue.run();
+
+  const imageQueue = new DownloadQueue('https://images.gog.com', env.GROG_DATA_DIR, downloadImageFile);
+
+  for (const rawUrl of Object.values(productData.images)) {
+    const url = rawUrl.startsWith('http')
+      ? new URL(rawUrl)
+      : new URL(`https:${rawUrl}`);
+
+    const rawPath = url.pathname;
+    const path = `${rawPath.split('.')[0].split('_')[0]}.png`;
+    imageQueue.add({ productId, path });
+  }
+
+  for (const screenshot of productData.screenshots) {
+    if (screenshot['image_id']) {
+      const path = `/${screenshot['image_id']}.png`;
+      imageQueue.add({ productId, path });
+    }
+  }
+
+  await imageQueue.run();
 };
 
 const handleMirror = async ([command, ...args], flags) => {
