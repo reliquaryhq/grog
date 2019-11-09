@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs-extra';
+import _ from 'lodash';
 import MODULE_DIR from './moduleDir.js';
 
 const SRC_DIR = path.resolve(MODULE_DIR, 'src');
@@ -25,9 +26,30 @@ const hashFile = (path, algorithm, encoding = 'hex') => {
   });
 };
 
+const verifyFile = async (path, verify = {}) => {
+  if (_.has(verify, 'size')) {
+    const { size } = await fs.stat(path);
+
+    if (size !== verify.size) {
+      return false;
+    }
+  }
+
+  if (_.has(verify, 'hash')) {
+    const hashValue = await hashFile(path, verify.hash.algorithm);
+
+    if (hashValue !== verify.hash.value) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export {
   MODULE_DIR,
   SCHEMA_DIR,
   SRC_DIR,
   hashFile,
+  verifyFile,
 };
