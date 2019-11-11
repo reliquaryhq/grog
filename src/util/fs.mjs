@@ -27,23 +27,30 @@ const hashFile = (path, algorithm, encoding = 'hex') => {
 };
 
 const verifyFile = async (path, verify = {}) => {
+  let pass = 0;
+  let fail = 0;
+
   if (_.has(verify, 'size')) {
     const { size } = await fs.stat(path);
 
-    if (size !== verify.size) {
-      return false;
+    if (size === verify.size) {
+      pass++;
+    } else {
+      fail++;
     }
   }
 
   if (_.has(verify, 'hash')) {
     const hashValue = await hashFile(path, verify.hash.algorithm);
 
-    if (hashValue !== verify.hash.value) {
-      return false;
+    if (hashValue === verify.hash.value) {
+      pass++;
+    } else {
+      fail++;
     }
   }
 
-  return true;
+  return pass > 0 && fail === 0;
 };
 
 export {
