@@ -3,16 +3,15 @@ import Progress from 'progress';
 import { formatBytes, formatFixedWidthString } from './string.mjs';
 
 class DownloadQueue {
-  constructor(host, downloadRoot, handleDownload) {
-    this.host = host;
-    this.downloadRoot = downloadRoot;
+  constructor(rootDir, handleDownload) {
+    this.rootDir = rootDir;
     this.handleDownload = handleDownload;
     this.entries = {};
     this.totalSize = 0;
   }
 
   add(entry) {
-    this.entries[entry.path] = entry;
+    this.entries[entry.url] = entry;
 
     if (entry.size) {
       this.totalSize += entry.size;
@@ -35,21 +34,11 @@ class DownloadQueue {
       },
     );
 
-    const onProgress = (entry, bytes) => {
-      downloadedSize += bytes;
-
-      progress.tick(0, {
-        downloadedSize: formatBytes(downloadedSize),
-        totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(entry.path, 50, 'right'),
-      });
-    };
-
     for (const entry of entries) {
       progress.tick(0, {
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(entry.path, 50, 'right'),
+        name: formatFixedWidthString(entry.url, 50, 'right'),
       });
 
       const onHeaders = (headers) => {
@@ -58,9 +47,19 @@ class DownloadQueue {
         }
       };
 
+      const onProgress = (bytes) => {
+        downloadedSize += bytes;
+
+        progress.tick(0, {
+          downloadedSize: formatBytes(downloadedSize),
+          totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
+          name: formatFixedWidthString(entry.url, 50, 'right'),
+        });
+      };
+
       await this.handleDownload(
-        { ...entry, host: this.host },
-        this.downloadRoot,
+        entry,
+        this.rootDir,
         agent,
         onHeaders,
         onProgress,
@@ -69,7 +68,7 @@ class DownloadQueue {
       progress.tick(1, {
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(entry.path, 50, 'right'),
+        name: formatFixedWidthString(entry.url, 50, 'right'),
       });
     }
   }

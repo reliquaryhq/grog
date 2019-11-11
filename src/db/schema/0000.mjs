@@ -27,27 +27,21 @@ const up = async (connection, sql) => {
       revision_last_seen_at TIMESTAMP
     );
 
-    CREATE TABLE cdn_files (
+    CREATE TABLE assets (
       id BIGSERIAL,
       product_id BIGINT,
-      path TEXT NOT NULL UNIQUE,
-      md5 TEXT,
+      host TEXT NOT NULL,
+      path TEXT NOT NULL,
+      hash_algorithm TEXT,
+      hash_encoding TEXT,
+      hash_value TEXT,
       size BIGINT,
-      verify_md5 TEXT,
+      verify_hash_algorithm TEXT,
+      verify_hash_encoding TEXT,
+      verify_hash_value TEXT,
       verify_size BIGINT,
       is_downloaded BOOLEAN,
       is_verified BOOLEAN,
-      created_at TIMESTAMP,
-      updated_at TIMESTAMP
-    );
-
-    CREATE TABLE image_files (
-      id BIGSERIAL,
-      product_id BIGINT,
-      path TEXT NOT NULL UNIQUE,
-      md5 TEXT,
-      size BIGINT,
-      is_downloaded BOOLEAN,
       created_at TIMESTAMP,
       updated_at TIMESTAMP
     );
@@ -59,8 +53,7 @@ const down = async (connection, sql) => {
     DROP TABLE schema;
     DROP TABLE api_products;
     DROP TABLE api_product_builds;
-    DROP TABLE cdn_files;
-    DROP TABLE image_files;
+    DROP TABLE assets;
   `);
 }
 

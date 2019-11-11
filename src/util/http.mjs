@@ -22,7 +22,9 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
         rejecting = true;
 
         file.end();
-        hash.end();
+        if (hash) {
+          hash.end();
+        }
         fs.unlinkSync(path);
 
         const error = new Error(`HTTP Error ${response.statusCode}`);
@@ -96,11 +98,19 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
           return;
         }
 
-        resolve({
-          path,
+        const download = {
           size,
-          hash: hashValue,
-        });
+        };
+
+        if (hash) {
+          download.hash = {
+            algorithm: verify.hash.algorithm,
+            encoding: verify.hash.encoding,
+            value: hashValue,
+          };
+        }
+
+        resolve(download);
       });
     });
   });
