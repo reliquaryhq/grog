@@ -1,11 +1,13 @@
 import https from 'https';
 import Progress from 'progress';
 import { formatBytes, formatFixedWidthString } from './string.mjs';
+import { sleep } from './common.mjs';
 
 class DownloadQueue {
-  constructor(rootDir, handleDownload) {
+  constructor(rootDir, handleDownload, delay = 0) {
     this.rootDir = rootDir;
     this.handleDownload = handleDownload;
+    this.delay = delay;
     this.entries = {};
     this.totalSize = 0;
   }
@@ -57,7 +59,7 @@ class DownloadQueue {
         });
       };
 
-      await this.handleDownload(
+      const { alreadyDownloaded } = await this.handleDownload(
         entry,
         this.rootDir,
         agent,
@@ -70,6 +72,10 @@ class DownloadQueue {
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
         name: formatFixedWidthString(entry.url, 50, 'right'),
       });
+
+      if (!alreadyDownloaded) {
+        await sleep(this.delay);
+      }
     }
   }
 }

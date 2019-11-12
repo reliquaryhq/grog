@@ -55,7 +55,9 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
         // TODO
       }
 
-      return;
+      return {
+        alreadyDownloaded: true,
+      };
     }
 
     await db.asset.createAsset({
@@ -70,7 +72,9 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
       isVerified,
     });
 
-    return;
+    return {
+      alreadyDownloaded: true,
+    };
   }
 
   await fs.mkdirp(path.dirname(tmpPath));
@@ -105,7 +109,9 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
       // TODO
     }
 
-    return;
+    return {
+      alreadyDownloaded: false,
+    };
   }
 
   await db.asset.createAsset({
@@ -119,6 +125,10 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     isDownloaded,
     isVerified,
   });
+
+  return {
+    alreadyDownloaded: false,
+  };
 };
 
 export {
