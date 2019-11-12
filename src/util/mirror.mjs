@@ -27,7 +27,7 @@ const mirrorProduct = async (productId) => {
     await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
   }
 
-  const buildRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset);
+  const buildRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 1000);
 
   for (const path of await db.product.getApiProductBuildRepositoryPaths({ productId })) {
     const url = `${GOG_CDN_URL}${path}`;
@@ -52,7 +52,7 @@ const mirrorProduct = async (productId) => {
 
   await buildRepositoryQueue.run();
 
-  const imageQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset);
+  const imageQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 1000);
 
   for (const rawUrl of Object.values(productData.images)) {
     const url = rawUrl.startsWith('http')
