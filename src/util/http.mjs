@@ -118,6 +118,12 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
 
 const getJson = (response) => response.json();
 
+const getQuery = (attributes) =>
+  Object.entries(attributes)
+    .map(([ key, value ]) => value === null || value === undefined ? null : `${key}=${encodeURIComponent(value)}`)
+    .filter((pair) => pair !== null)
+    .join('&');
+
 const handleError = async (response) => {
   if (response.ok) {
     return response;
@@ -139,5 +145,6 @@ const handleError = async (response) => {
 export {
   downloadFile,
   getJson,
+  getQuery,
   handleError,
 };
