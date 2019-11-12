@@ -1,5 +1,6 @@
 import { ensureDb, sleep } from '../util/common.mjs';
 import DownloadQueue from '../util/DownloadQueue.mjs';
+import { GOG_CDN_URL, GOG_IMAGES_URL } from '../util/api.mjs';
 import { downloadAsset } from '../util/asset.mjs';
 import { env } from '../util/process.mjs';
 import { createOrUpdateApiProduct, createOrUpdateApiProductBuilds } from '../util/product.mjs';
@@ -31,7 +32,7 @@ const handleMirrorProduct = async (_args, flags) => {
   const buildRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset);
 
   for (const path of await db.product.getApiProductBuildRepositoryPaths({ productId })) {
-    const url = `https://cdn.gog.com${path}`;
+    const url = `${GOG_CDN_URL}${path}`;
 
     const entry = {
       url,
@@ -61,14 +62,14 @@ const handleMirrorProduct = async (_args, flags) => {
       : new URL(`https:${rawUrl}`);
 
     imageQueue.add({
-      url: `https://images.gog.com${url.pathname.split('.')[0].split('_')[0]}.png`,
+      url: `${GOG_IMAGES_URL}${url.pathname.split('.')[0].split('_')[0]}.png`,
       productId,
     });
   }
 
   for (const screenshot of productData.screenshots) {
     if (screenshot['image_id']) {
-      const url = `https://images.gog.com/${screenshot['image_id']}.png`;
+      const url = `${GOG_IMAGES_URL}/${screenshot['image_id']}.png`;
 
       imageQueue.add({
         url,
