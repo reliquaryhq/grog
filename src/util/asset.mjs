@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs-extra';
 import _ from 'lodash';
+import { retry } from './common.mjs';
 import { hashFile, verifyFile } from './fs.mjs';
 import { downloadFile } from './http.mjs';
 import * as db from '../db.mjs';
@@ -83,13 +84,13 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     await fs.unlink(tmpPath);
   }
 
-  const download = await downloadFile(agent, url, tmpPath,
-    {
-      verify,
-      onHeaders,
-      onProgress,
-    },
-  );
+  let download;
+
+  await retry(4, 250, async (attempt, _error) => {
+    download = attempt === 0
+      ? await downloadFile(agent, url, tmpPath, { verify, onHeaders, onProgress })
+      : await downloadFile(agent, url, tmpPath, { verify, onProgress });
+  });
 
   await fs.mkdirp(path.dirname(downloadPath));
   await fs.move(tmpPath, downloadPath);
