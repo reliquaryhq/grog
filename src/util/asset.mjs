@@ -32,29 +32,31 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   const verify = _.pick(entry, ['hash', 'size']);
 
   if (await fs.pathExists(downloadPath)) {
-    const hash = {
-      algorithm: _.get(verify, 'hash.algorithm', 'md5'),
-      encoding: _.get(verify, 'hash.encoding', 'hex'),
-    };
-    hash.value = await hashFile(downloadPath, hash.algorithm, hash.encoding);
     const { size } = await fs.stat(downloadPath);
 
     onHeaders({ 'content-length': size });
     onProgress(size);
 
+    const asset = await db.asset.getAsset({ host: url.hostname, path: url.pathname });
+
+    if (asset && asset['is_downloaded'] && (asset['is_verified'] || _.isEmpty(verify))) {
+      return {
+        alreadyDownloaded: true,
+      };
+    }
+
+    const hash = {
+      algorithm: _.get(verify, 'hash.algorithm', 'md5'),
+      encoding: _.get(verify, 'hash.encoding', 'hex'),
+    };
+    hash.value = await hashFile(downloadPath, hash.algorithm, hash.encoding);
+
     const isDownloaded = true;
     const isVerified = await verifyFile(downloadPath, verify);
 
-    const asset = await db.asset.getAsset({ host: url.hostname, path: url.pathname });
-
     if (asset) {
-      if (!asset['is_downloaded']) {
-        // TODO
-      }
-
-      if (!asset['is_verified']) {
-        // TODO
-      }
+      // TODO
+      // update asset
 
       return {
         alreadyDownloaded: true,
