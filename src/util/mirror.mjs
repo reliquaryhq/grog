@@ -55,6 +55,10 @@ const mirrorProduct = async (productId) => {
   const imageQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 1000);
 
   for (const rawUrl of Object.values(productData.images)) {
+    if (!rawUrl) {
+      continue;
+    }
+
     const url = rawUrl.startsWith('http')
       ? new URL(rawUrl)
       : new URL(`https:${rawUrl}`);
