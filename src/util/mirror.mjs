@@ -8,10 +8,10 @@ import * as api from '../api.mjs';
 import * as db from '../db.mjs';
 
 const mirrorProduct = async (productId) => {
-  console.log(`Mirroring product; product: ${productId}`);
-
   const productData = await api.product.getProduct(productId);
   const productFetchedAt = new Date();
+
+  console.log(`\nMirroring product; product: ${productId}; title: ${productData['title']}`);
 
   await createOrUpdateApiProduct(productId, productData, productFetchedAt);
 
