@@ -73,6 +73,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
       verifySize: verify.size,
       isDownloaded,
       isVerified,
+      type: entry.type,
     });
 
     return {
@@ -127,6 +128,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     verifySize: verify.size,
     isDownloaded,
     isVerified,
+    type: entry.type,
   });
 
   return {

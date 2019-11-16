@@ -35,6 +35,7 @@ const mirrorProduct = async (productId) => {
     const entry = {
       url,
       productId,
+      type: 'repository-manifest',
     };
 
     if (path.includes('content-system/v2/meta')) {
@@ -66,6 +67,7 @@ const mirrorProduct = async (productId) => {
     imageQueue.add({
       url: `${GOG_IMAGES_URL}${url.pathname.split('.')[0].split('_')[0]}.png`,
       productId,
+      type: 'product-image',
     });
   }
 
@@ -76,6 +78,7 @@ const mirrorProduct = async (productId) => {
       imageQueue.add({
         url,
         productId,
+        type: 'screenshot',
       });
     }
   }
