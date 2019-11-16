@@ -25,7 +25,11 @@ const formatFixedWidthString = (string, width, align = 'left') => {
     : `...${string.substring(string.length - width + 3)}`;
 };
 
+const formatPath22 = (path) =>
+  `${path.slice(0, 2)}/${path.slice(2, 4)}/${path}`;
+
 export {
   formatBytes,
   formatFixedWidthString,
+  formatPath22,
 };
