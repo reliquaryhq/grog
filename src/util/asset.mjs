@@ -136,6 +136,23 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   };
 };
 
+const readAsset = (entry, rootDir) => {
+  if (typeof entry.url !== 'string' || entry.url.length === 0) {
+    throw new Error('entry.url required');
+  }
+
+  if (typeof rootDir !== 'string' || rootDir.length === 0) {
+    throw new Error('rootDir required');
+  }
+
+  const url = new URL(entry.url);
+  const hostDir = path.resolve(rootDir, url.hostname);
+  const assetPath = path.resolve(hostDir, url.pathname.slice(1));
+
+  return fs.readFile(assetPath);
+};
+
 export {
   downloadAsset,
+  readAsset,
 };
