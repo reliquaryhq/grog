@@ -19,7 +19,7 @@ const mirrorProduct = async (productId) => {
     .filter((os) => productData['content_system_compatibility'][os]);
 
   for (const os of oss) {
-    await sleep(1000);
+    await sleep(500);
 
     const buildsData = await api.cs.getBuilds(productId, os);
     const buildsFetchedAt = new Date();
@@ -27,7 +27,7 @@ const mirrorProduct = async (productId) => {
     await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
   }
 
-  const buildRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 1000);
+  const buildRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 500);
 
   for (const path of await db.product.getApiProductBuildRepositoryPaths({ productId })) {
     const url = `${GOG_CDN_URL}${path}`;
@@ -53,7 +53,7 @@ const mirrorProduct = async (productId) => {
 
   await buildRepositoryQueue.run();
 
-  const imageQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 1000);
+  const imageQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 500);
 
   for (const rawUrl of Object.values(productData.images)) {
     if (!rawUrl) {

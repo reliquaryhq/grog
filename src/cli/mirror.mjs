@@ -13,7 +13,7 @@ const handleMirrorProduct = async (_args, flags) => {
 
       for (const product of products) {
         await mirrorProduct(product.id);
-        await sleep(2000);
+        await sleep(1000);
       }
     }
   } else {
