@@ -32,7 +32,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   const verify = _.pick(entry, ['hash', 'size']);
 
   if (await fs.pathExists(downloadPath)) {
-    const { size } = await fs.stat(downloadPath);
+    const { mtime, size } = await fs.stat(downloadPath);
 
     onHeaders({ 'content-length': size });
     onProgress(size);
@@ -54,6 +54,10 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     const isDownloaded = true;
     const isVerified = await verifyFile(downloadPath, verify);
 
+    const lastModified = url.hostname === 'cdn.gog.com' && mtime
+      ? mtime
+      : null;
+
     if (asset) {
       // TODO
       // update asset
@@ -74,6 +78,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
       isDownloaded,
       isVerified,
       type: entry.type,
+      lastModified,
     });
 
     return {
@@ -104,6 +109,10 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   const isDownloaded = true;
   const isVerified = await verifyFile(downloadPath, verify);
 
+  const lastModified = url.hostname === 'cdn.gog.com'
+    ? download.lastModified
+    : null;
+
   if (asset) {
     if (!asset['is_downloaded']) {
       // TODO
@@ -129,6 +138,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     isDownloaded,
     isVerified,
     type: entry.type,
+    lastModified,
   });
 
   return {

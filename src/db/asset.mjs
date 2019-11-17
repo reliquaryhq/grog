@@ -11,6 +11,7 @@ const createAsset = ({
   isDownloaded,
   isVerified,
   type = null,
+  lastModified = null,
 }) =>
   pool.query(sql`
     INSERT INTO assets (
@@ -29,7 +30,8 @@ const createAsset = ({
       is_verified,
       created_at,
       updated_at,
-      asset_type_id
+      asset_type_id,
+      last_modified
     ) VALUES (
       ${productId},
       ${host},
@@ -46,7 +48,8 @@ const createAsset = ({
       ${isVerified},
       NOW() AT TIME ZONE 'UTC',
       NOW() AT TIME ZONE 'UTC',
-      (SELECT id FROM asset_types WHERE slug = ${type})
+      (SELECT id FROM asset_types WHERE slug = ${type}),
+      ${lastModified ? lastModified.toISOString() : null}
     );
   `);
 

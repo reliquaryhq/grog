@@ -42,9 +42,15 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
         ? parseInt(response.headers['content-length'], 10)
         : null;
 
-      const lastModified = new Date(
-        response.headers['last-modified'] || response.headers['date'],
-      );
+      const lastModified = response.headers['last-modified']
+        ? new Date(response.headers['last-modified'])
+        : null;
+
+      const date = response.headers['date']
+        ? new Date(response.headers['date'])
+        : null;
+
+      const now = new Date();
 
       if (hash) {
         response.pipe(hash);
@@ -92,7 +98,7 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
         }
 
         try {
-          fs.utimesSync(path, lastModified, lastModified);
+          fs.utimesSync(path, lastModified || date || now, lastModified || date || now);
         } catch (error) {
           reject(error);
           return;
@@ -100,6 +106,7 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
 
         const download = {
           size,
+          lastModified,
         };
 
         if (hash) {
