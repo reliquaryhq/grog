@@ -13,7 +13,7 @@ const getAuthorizationCode = (code, redirectUri) =>
 const getRefreshToken = (refreshToken) =>
   fetch(
     `${GOG_AUTH_URL}/token?${getQuery({ client_id: GOG_CLIENT_ID, client_secret: GOG_CLIENT_SECRET, grant_type: 'refresh_token', refresh_token: refreshToken })}`,
-    { headers: { ...GOG_AUTH_HEADERS } }
+    { headers: { ...GOG_AUTH_HEADERS } },
   )
   .then(handleError)
   .then(getJson);
