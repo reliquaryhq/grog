@@ -7,6 +7,9 @@ import { hashFile, verifyFile } from './fs.mjs';
 import { downloadFile } from './http.mjs';
 import * as db from '../db.mjs';
 
+const DEFAULT_HASH_ALGORITHM = 'md5';
+const DEFAULT_HASH_ENCODING = 'hex';
+
 const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   if (typeof entry.url !== 'string' || entry.url.length === 0) {
     throw new Error('entry.url required');
@@ -16,70 +19,26 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     throw new Error('rootDir required');
   }
 
+  const verify = _.pick(entry, ['hash', 'size']);
   const url = new URL(entry.url);
 
   const hostDir = path.resolve(rootDir, url.hostname);
   const tmpDir = path.resolve(rootDir, 'tmp');
 
   const downloadPath = path.resolve(hostDir, url.pathname.slice(1));
-
   const tmpName = crypto.createHash('md5').update(downloadPath).digest('hex')
     + '-'
     + new Date().getTime()
     + '.grogtmp';
   const tmpPath = path.resolve(tmpDir, tmpName);
 
-  const verify = _.pick(entry, ['hash', 'size']);
-
   if (await fs.pathExists(downloadPath)) {
-    const { mtime, size } = await fs.stat(downloadPath);
+    const { size } = await fs.stat(downloadPath);
 
     onHeaders({ 'content-length': size });
     onProgress(size);
 
-    const asset = await db.asset.getAsset({ host: url.hostname, path: url.pathname });
-
-    if (asset && asset['is_downloaded'] && (asset['is_verified'] || _.isEmpty(verify))) {
-      return {
-        alreadyDownloaded: true,
-      };
-    }
-
-    const hash = {
-      algorithm: _.get(verify, 'hash.algorithm', 'md5'),
-      encoding: _.get(verify, 'hash.encoding', 'hex'),
-    };
-    hash.value = await hashFile(downloadPath, hash.algorithm, hash.encoding);
-
-    const isDownloaded = true;
-    const isVerified = await verifyFile(downloadPath, verify);
-
-    const lastModified = url.hostname === 'cdn.gog.com' && mtime
-      ? mtime
-      : null;
-
-    if (asset) {
-      // TODO
-      // update asset
-
-      return {
-        alreadyDownloaded: true,
-      };
-    }
-
-    await db.asset.createAsset({
-      productId: entry.productId,
-      host: url.hostname,
-      path: url.pathname,
-      hash,
-      size,
-      verifyHash: verify.hash,
-      verifySize: verify.size,
-      isDownloaded,
-      isVerified,
-      type: entry.type,
-      lastModified,
-    });
+    await syncAsset(entry, downloadPath);
 
     return {
       alreadyDownloaded: true,
@@ -104,45 +63,20 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   await fs.move(tmpPath, downloadPath);
   await fs.chmod(downloadPath, 0o444);
 
-  const asset = await db.asset.getAsset({ host: url.hostname, path: url.pathname });
-
-  const isDownloaded = true;
-  const isVerified = await verifyFile(downloadPath, verify);
-
-  const lastModified = url.hostname === 'cdn.gog.com'
-    ? download.lastModified
-    : null;
-
-  if (asset) {
-    if (!asset['is_downloaded']) {
-      // TODO
-    }
-
-    if (!asset['is_verified']) {
-      // TODO
-    }
-
-    return {
-      alreadyDownloaded: false,
-    };
-  }
-
-  await db.asset.createAsset({
-    productId: entry.productId,
-    host: url.hostname,
-    path: url.pathname,
-    hash: download.hash,
-    size: download.size,
-    verifyHash: verify.hash,
-    verifySize: verify.size,
-    isDownloaded,
-    isVerified,
-    type: entry.type,
-    lastModified,
+  await syncAsset(entry, downloadPath, {
+    lastModified: download.lastModified,
   });
 
   return {
     alreadyDownloaded: false,
+  };
+};
+
+const getAssetHash = async (downloadPath, algorithm, encoding) => {
+  return {
+    algorithm,
+    encoding,
+    value: await hashFile(downloadPath, algorithm, encoding),
   };
 };
 
@@ -160,6 +94,78 @@ const readAsset = (entry, rootDir) => {
   const assetPath = path.resolve(hostDir, url.pathname.slice(1));
 
   return fs.readFile(assetPath);
+};
+
+const syncAsset = async (entry, downloadPath, known = {}) => {
+  const verify = _.pick(entry, ['hash', 'size']);
+  const canVerify = !_.isEmpty(verify);
+  const url = new URL(entry.url);
+
+  const stat = await fs.stat(downloadPath);
+
+  const size = stat.size;
+  const lastModified = url.hostname === 'cdn.gog.com'
+    ? known.lastModified || stat.mtime
+    : null;
+
+  const asset = await db.asset.getAsset({ host: url.hostname, path: url.pathname });
+
+  if (asset) {
+    const updates = {};
+
+    if (!asset['hash_value']) {
+      updates.hash = known.hash || await getAssetHash(
+        downloadPath,
+        _.get(verify, 'hash.algorithm', DEFAULT_HASH_ALGORITHM),
+        _.get(verify, 'hash.encoding', DEFAULT_HASH_ENCODING),
+      );
+    }
+
+    if (!asset['is_downloaded']) {
+      updates.isDownloaded = true;
+    }
+
+    if (!asset['is_verified'] && canVerify) {
+      updates.isVerified = await verifyFile(downloadPath, verify);
+    }
+
+    if (!asset['last_modified'] && lastModified) {
+      updates.lastModified = lastModified;
+    }
+
+    if (!asset['asset_type_id']) {
+      updates.type = entry.type;
+    }
+
+    await db.asset.updateAsset({
+      id: asset.id,
+      ...updates,
+    });
+
+    return;
+  }
+
+  const hash = known.hash || await getAssetHash(
+    downloadPath,
+    _.get(verify, 'hash.algorithm', 'md5'),
+    _.get(verify, 'hash.encoding', 'hex'),
+  );
+
+  const isVerified = canVerify ? await verifyFile(downloadPath, verify) : false;
+
+  await db.asset.createAsset({
+    productId: entry.productId,
+    host: url.hostname,
+    path: url.pathname,
+    hash,
+    size,
+    verifyHash: verify.hash,
+    verifySize: verify.size,
+    isDownloaded: true,
+    isVerified,
+    type: entry.type,
+    lastModified,
+  });
 };
 
 export {
