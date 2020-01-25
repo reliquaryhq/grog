@@ -28,8 +28,12 @@ const formatFixedWidthString = (string, width, align = 'left') => {
 const formatPath22 = (path) =>
   `${path.slice(0, 2)}/${path.slice(2, 4)}/${path}`;
 
+const formatString = (format, matcher, data) =>
+  format.replace(matcher, (m, key) => Object.prototype.hasOwnProperty.call(data, key) ? data[key] : "");
+
 export {
   formatBytes,
   formatFixedWidthString,
   formatPath22,
+  formatString,
 };
