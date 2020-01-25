@@ -61,7 +61,63 @@ const getAsset = async ({ host, path }) =>
     AND path = ${path};
   `)).rows[0];
 
+const updateAsset = async ({
+  id,
+  hash,
+  isDownloaded,
+  isVerified,
+  lastModified,
+  type,
+}) => {
+  const updates = [];
+
+  if (hash === null) {
+    updates.push(sql`hash_algorithm = NULL`);
+    updates.push(sql`hash_encoding = NULL`);
+    updates.push(sql`hash_value = NULL`);
+  } else if (hash !== undefined) {
+    updates.push(sql`hash_algorithm = ${hash.algorithm}`);
+    updates.push(sql`hash_encoding = ${hash.encoding}`);
+    updates.push(sql`hash_value = ${hash.value}`);
+  }
+
+  if (isDownloaded === null) {
+    updates.push(sql`is_downloaded = NULL`);
+  } else if (isDownloaded !== undefined) {
+    updates.push(sql`is_downloaded = ${isDownloaded}`);
+  }
+
+  if (isVerified === null) {
+    updates.push(sql`is_verified = NULL`);
+  } else if (isVerified !== undefined) {
+    updates.push(sql`is_verified = ${isVerified}`);
+  }
+
+  if (lastModified === null) {
+    updates.push(sql`last_modified = NULL`);
+  } else if (lastModified !== undefined) {
+    updates.push(sql`last_modified = ${lastModified.toISOString()}`);
+  }
+
+  if (type === null) {
+    updates.push(sql`asset_type_id = NULL`);
+  } else if (type !== undefined) {
+    updates.push(sql`asset_type_id = (SELECT id FROM asset_types WHERE slug = ${type})`);
+  }
+
+  if (updates.length > 0) {
+    updates.push(sql`updated_at = NOW() AT TIME ZONE 'utc'`);
+
+    return pool.query(sql`
+      UPDATE assets
+      SET ${sql.join(updates, sql`, `)}
+      WHERE assets.id = ${id};
+    `);
+  }
+};
+
 export {
   createAsset,
   getAsset,
+  updateAsset,
 };
