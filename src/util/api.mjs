@@ -8,6 +8,7 @@ const GOG_API_URL = 'https://api.gog.com';
 const GOG_AUTH_URL = 'https://auth.gog.com';
 const GOG_CDN_URL = 'https://cdn.gog.com';
 const GOG_CS_URL = 'https://content-system.gog.com';
+const GOG_EMBED_URL = 'https://embed.gog.com';
 const GOG_IMAGES_URL = 'https://images.gog.com';
 const GOG_WWW_URL = 'https://www.gog.com';
 
@@ -18,6 +19,9 @@ const GOG_AUTH_HEADERS = {
   'User-Agent': GOG_GALAXY_USER_AGENT,
 };
 const GOG_CS_HEADERS = {
+  'User-Agent': GOG_GALAXY_USER_AGENT,
+};
+const GOG_EMBED_HEADERS = {
   'User-Agent': GOG_GALAXY_USER_AGENT,
 };
 const GOG_WWW_HEADERS = {
@@ -34,6 +38,8 @@ export {
   GOG_CLIENT_SECRET,
   GOG_CS_HEADERS,
   GOG_CS_URL,
+  GOG_EMBED_HEADERS,
+  GOG_EMBED_URL,
   GOG_IMAGES_URL,
   GOG_WWW_HEADERS,
   GOG_WWW_URL,
