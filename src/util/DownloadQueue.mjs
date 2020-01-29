@@ -40,7 +40,7 @@ class DownloadQueue {
       progress.tick(0, {
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(entry.url, 50, 'right'),
+        name: formatFixedWidthString(new URL(entry.url).pathname, 50, 'right'),
       });
 
       const onHeaders = (headers) => {
@@ -70,7 +70,7 @@ class DownloadQueue {
       progress.tick(1, {
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(entry.url, 50, 'right'),
+        name: formatFixedWidthString(new URL(entry.url).pathname, 50, 'right'),
       });
 
       if (!alreadyDownloaded) {
