@@ -4,7 +4,7 @@ import * as db from '../db.mjs';
 const handleReadProduct = async (_args, flags) => {
   const productId = flags['product-id'];
 
-  const product = await db.product.getApiProduct(productId);
+  const product = await db.product.getApiProduct({ productId });
 
   if (!product) {
     console.log('Product not found');
@@ -28,7 +28,7 @@ const handleReadProductBuilds = async (_args, flags) => {
   const productId = flags['product-id'];
   const os = flags['os'];
 
-  const productBuilds = await db.product.getApiProductBuilds(productId, os);
+  const productBuilds = await db.product.getApiProductBuilds({ productId, os });
 
   if (!productBuilds) {
     console.log('Product builds not found');
