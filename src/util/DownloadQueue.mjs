@@ -12,6 +12,10 @@ class DownloadQueue {
     this.totalSize = 0;
   }
 
+  get length() {
+    return Object.keys(this.entries).length;
+  }
+
   add(entry) {
     this.entries[entry.url] = entry;
 
