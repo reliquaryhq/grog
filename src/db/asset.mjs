@@ -68,6 +68,7 @@ const updateAsset = async ({
   isVerified,
   lastModified,
   type,
+  productId,
 }) => {
   const updates = [];
 
@@ -103,6 +104,12 @@ const updateAsset = async ({
     updates.push(sql`asset_type_id = NULL`);
   } else if (type !== undefined) {
     updates.push(sql`asset_type_id = (SELECT id FROM asset_types WHERE slug = ${type})`);
+  }
+
+  if (productId === null) {
+    updates.push(sql`product_id = NULL`);
+  } else if (type !== undefined) {
+    updates.push(sql`product_id = ${productId}`);
   }
 
   if (updates.length > 0) {
