@@ -21,8 +21,9 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
 
   const verify = _.pick(entry, ['hash', 'size']);
   const url = new URL(entry.url);
+  const hostname = entry.hostname || url.hostname;
 
-  const hostDir = path.resolve(rootDir, url.hostname);
+  const hostDir = path.resolve(rootDir, hostname);
   const tmpDir = path.resolve(rootDir, 'tmp');
 
   const downloadPath = path.resolve(hostDir, url.pathname.slice(1));
@@ -90,7 +91,8 @@ const readAsset = (entry, rootDir) => {
   }
 
   const url = new URL(entry.url);
-  const hostDir = path.resolve(rootDir, url.hostname);
+  const hostname = entry.hostname || url.hostname;
+  const hostDir = path.resolve(rootDir, hostname);
   const assetPath = path.resolve(hostDir, url.pathname.slice(1));
 
   return fs.readFile(assetPath);
@@ -100,15 +102,16 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
   const verify = _.pick(entry, ['hash', 'size']);
   const canVerify = !_.isEmpty(verify);
   const url = new URL(entry.url);
+  const hostname = entry.hostname || url.hostname;
 
   const stat = await fs.stat(downloadPath);
 
   const size = stat.size;
-  const lastModified = url.hostname === 'cdn.gog.com'
+  const lastModified = hostname === 'cdn.gog.com'
     ? known.lastModified || stat.mtime
     : null;
 
-  const asset = await db.asset.getAsset({ host: url.hostname, path: url.pathname });
+  const asset = await db.asset.getAsset({ host: hostname, path: url.pathname });
 
   if (asset) {
     const updates = {};
@@ -155,7 +158,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
 
   await db.asset.createAsset({
     productId: entry.productId,
-    host: url.hostname,
+    host: hostname,
     path: url.pathname,
     hash,
     size,
