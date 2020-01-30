@@ -140,6 +140,10 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
       updates.type = entry.type;
     }
 
+    if (asset['product_id'] !== entry.productId) {
+      updates.productId = entry.productId;
+    }
+
     await db.asset.updateAsset({
       id: asset.id,
       ...updates,
