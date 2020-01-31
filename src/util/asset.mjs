@@ -65,6 +65,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   await fs.chmod(downloadPath, 0o444);
 
   await syncAsset(entry, downloadPath, {
+    hash: download.hash,
     lastModified: download.lastModified,
   });
 
@@ -129,7 +130,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
     }
 
     if (!asset['is_verified'] && canVerify) {
-      updates.isVerified = await verifyFile(downloadPath, verify);
+      updates.isVerified = await verifyFile(downloadPath, verify, known);
     }
 
     if (!asset['last_modified'] && lastModified) {
@@ -158,7 +159,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
     _.get(verify, 'hash.encoding', 'hex'),
   );
 
-  const isVerified = canVerify ? await verifyFile(downloadPath, verify) : false;
+  const isVerified = canVerify ? await verifyFile(downloadPath, verify, known) : false;
 
   await db.asset.createAsset({
     productId: entry.productId,
