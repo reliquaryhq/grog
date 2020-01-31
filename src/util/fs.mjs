@@ -26,7 +26,7 @@ const hashFile = (path, algorithm, encoding = 'hex') => {
   });
 };
 
-const verifyFile = async (path, verify = {}) => {
+const verifyFile = async (path, verify = {}, known = {}) => {
   let pass = 0;
   let fail = 0;
 
@@ -41,7 +41,7 @@ const verifyFile = async (path, verify = {}) => {
   }
 
   if (_.has(verify, 'hash')) {
-    const hashValue = await hashFile(path, verify.hash.algorithm);
+    const hashValue = known.hash ? known.hash.value : await hashFile(path, verify.hash.algorithm);
 
     if (hashValue === verify.hash.value) {
       pass++;
