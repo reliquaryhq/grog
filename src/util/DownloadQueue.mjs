@@ -26,7 +26,7 @@ class DownloadQueue {
 
   async run() {
     const entries = Object.values(this.entries);
-    const agent = new https.Agent({ keepAlive: true });
+    const agent = new https.Agent({ keepAlive: true, keepAliveMsecs: 10000, maxSockets: 1 });
     let downloadedSize = 0;
 
     const progress = new Progress(
