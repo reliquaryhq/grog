@@ -73,6 +73,10 @@ class DownloadQueue {
         onProgress,
       );
 
+      if (entry.onDownloaded) {
+        await entry.onDownloaded();
+      }
+
       progress.tick(1, {
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
