@@ -3,7 +3,11 @@
 import minimist from 'minimist';
 import { handleCommand } from './cli.mjs';
 
-const argv = minimist(process.argv.slice(2));
+const STRING_ARGS = [
+  'build-id',
+];
+
+const argv = minimist(process.argv.slice(2), { string: STRING_ARGS });
 const { _: args, ...flags } = argv;
 
 handleCommand(args, flags)
