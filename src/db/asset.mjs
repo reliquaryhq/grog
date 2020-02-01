@@ -50,7 +50,7 @@ const createAsset = ({
       NOW() AT TIME ZONE 'UTC',
       (SELECT id FROM asset_types WHERE slug = ${type}),
       ${lastModified ? lastModified.toISOString() : null}
-    );
+    ) RETURNING id;
   `);
 
 const getAsset = async ({ host, path }) =>
