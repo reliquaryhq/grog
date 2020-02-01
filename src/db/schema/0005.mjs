@@ -6,16 +6,16 @@ const up = async (connection, sql) => {
       ('Bonus Content File', 'bonus-content-file'),
       ('Installer File', 'installer-file'),
       ('Language Pack File', 'language-pack-file'),
-      ('Patch File', 'patch-file');
+      ('Patch File', 'patch-file'),
+      ('Checksum File', 'checksum-file');
 
     CREATE TABLE downlinks (
       id BIGSERIAL,
       product_id BIGINT NOT NULL,
-      asset_id BIGINT,
+      asset_id BIGINT NOT NULL,
       file_id TEXT NOT NULL,
-      downlink_type TEXT NOT NULL,
       downlink_path TEXT NOT NULL,
-      size BIGINT
+      size BIGINT NOT NULL
     );
   `);
 };
@@ -26,7 +26,8 @@ const down = async (connection, sql) => {
       WHERE slug = 'bonus-content-file'
       OR slug = 'installer-file'
       OR slug = 'language-pack-file'
-      OR slug = 'patch-file';
+      OR slug = 'patch-file'
+      OR slug = 'checksum-file';
 
     DROP TABLE downlinks;
   `);
