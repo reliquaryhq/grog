@@ -65,7 +65,7 @@ class DownloadQueue {
         });
       };
 
-      const { alreadyDownloaded } = await this.handleDownload(
+      const download = await this.handleDownload(
         entry,
         this.rootDir,
         agent,
@@ -74,7 +74,7 @@ class DownloadQueue {
       );
 
       if (entry.onDownloaded) {
-        await entry.onDownloaded();
+        await entry.onDownloaded(download);
       }
 
       progress.tick(1, {
@@ -83,7 +83,7 @@ class DownloadQueue {
         name: formatFixedWidthString(url.pathname, 50, 'right'),
       });
 
-      if (!alreadyDownloaded) {
+      if (!download.alreadyDownloaded) {
         await sleep(this.delay);
       }
     }
