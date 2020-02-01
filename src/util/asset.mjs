@@ -39,10 +39,11 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     onHeaders({ 'content-length': size });
     onProgress(size);
 
-    await syncAsset(entry, downloadPath);
+    const asset = await syncAsset(entry, downloadPath);
 
     return {
       alreadyDownloaded: true,
+      asset,
     };
   }
 
@@ -64,13 +65,14 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   await fs.move(tmpPath, downloadPath);
   await fs.chmod(downloadPath, 0o444);
 
-  await syncAsset(entry, downloadPath, {
+  const asset = await syncAsset(entry, downloadPath, {
     hash: download.hash,
     lastModified: download.lastModified,
   });
 
   return {
     alreadyDownloaded: false,
+    asset,
   };
 };
 
@@ -150,7 +152,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
       ...updates,
     });
 
-    return;
+    return { id: asset['id'] };
   }
 
   const hash = known.hash || await getAssetHash(
@@ -161,7 +163,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
 
   const isVerified = canVerify ? await verifyFile(downloadPath, verify, known) : false;
 
-  await db.asset.createAsset({
+  const result = await db.asset.createAsset({
     productId: entry.productId,
     host: hostname,
     path: url.pathname,
@@ -174,6 +176,10 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
     type: entry.type,
     lastModified,
   });
+
+  return {
+    id: result.rows[0]['id'],
+  };
 };
 
 export {
