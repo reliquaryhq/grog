@@ -14,8 +14,7 @@ const up = async (connection, sql) => {
       product_id BIGINT NOT NULL,
       asset_id BIGINT NOT NULL,
       file_id TEXT NOT NULL,
-      downlink_path TEXT NOT NULL,
-      size BIGINT NOT NULL
+      downlink_path TEXT NOT NULL
     );
   `);
 };
