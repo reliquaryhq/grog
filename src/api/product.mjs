@@ -20,6 +20,14 @@ const getCatalogProducts = (page, sort, mediaType = null) =>
   .then(handleError)
   .then(getJson);
 
+const getDownlink = (path, authorization) =>
+  fetch(
+    `${GOG_API_URL}${path}`,
+    { headers: { ...GOG_API_HEADERS, 'Authorization': authorization } },
+  )
+  .then(handleError)
+  .then(getJson);
+
 const getProduct = (productId) =>
   fetch(
     `${GOG_API_URL}/products/${productId}?expand=${PRODUCT_EXPAND.join(',')}`,
@@ -30,5 +38,6 @@ const getProduct = (productId) =>
 
 export {
   getCatalogProducts,
+  getDownlink,
   getProduct,
 };
