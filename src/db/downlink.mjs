@@ -1,5 +1,25 @@
 import { pool, sql } from '../util/db.mjs';
 
+const createDownlink = ({
+  productId,
+  assetId,
+  fileId,
+  downlinkPath,
+}) =>
+  pool.query(sql`
+    INSERT INTO downlinks (
+      product_id,
+      asset_id,
+      file_id,
+      downlink_path
+    ) VALUES (
+      ${productId},
+      ${assetId},
+      ${fileId},
+      ${downlinkPath}
+    ) RETURNING id;
+  `);
+
 const getDownlink = async ({
   productId,
   downlinkPath,
@@ -12,5 +32,6 @@ const getDownlink = async ({
   `)).rows[0];
 
 export {
+  createDownlink,
   getDownlink,
 };
