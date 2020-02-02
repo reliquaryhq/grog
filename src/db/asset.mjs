@@ -61,6 +61,13 @@ const getAsset = async ({ host, path }) =>
     AND path = ${path};
   `)).rows[0];
 
+const getAssetById = async ({ id }) =>
+  (await pool.query(sql`
+    SELECT *
+    FROM assets
+    WHERE id = ${id};
+  `)).rows[0];
+
 const updateAsset = async ({
   id,
   hash,
@@ -126,5 +133,6 @@ const updateAsset = async ({
 export {
   createAsset,
   getAsset,
+  getAssetById,
   updateAsset,
 };
