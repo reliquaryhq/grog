@@ -65,13 +65,21 @@ class DownloadQueue {
         });
       };
 
-      const download = await this.handleDownload(
-        entry,
-        this.rootDir,
-        agent,
-        onHeaders,
-        onProgress,
-      );
+      let download;
+
+      try {
+        download = await this.handleDownload(
+          entry,
+          this.rootDir,
+          agent,
+          onHeaders,
+          onProgress,
+        );
+      } catch (error) {
+        progress.interrupt(`Error when handling entry: ${error}`);
+        await sleep(this.delay);
+        continue;
+      }
 
       if (entry.onDownloaded) {
         await entry.onDownloaded(download);
