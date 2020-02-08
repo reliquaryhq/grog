@@ -55,10 +55,8 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
 
   let download;
 
-  await retry(4, 250, async (attempt, _error) => {
-    download = attempt === 0
-      ? await downloadFile(agent, url, tmpPath, { verify, onHeaders, onProgress })
-      : await downloadFile(agent, url, tmpPath, { verify, onHeaders, onProgress });
+  await retry(4, 250, async (_attempt, _error) => {
+    download = await downloadFile(agent, url, tmpPath, { verify, onHeaders, onProgress });
   });
 
   await fs.mkdirp(path.dirname(downloadPath));
