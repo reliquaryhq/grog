@@ -29,6 +29,9 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
 
         const error = new Error(`HTTP Error ${response.statusCode}`);
         error.statusCode = response.statusCode;
+
+        response.resume();
+
         reject(error);
 
         return;
