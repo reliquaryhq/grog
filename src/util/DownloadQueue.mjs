@@ -17,6 +17,10 @@ class DownloadQueue {
   }
 
   add(entry) {
+    if (this.entries[entry.url]) {
+      return;
+    }
+
     this.entries[entry.url] = entry;
 
     if (entry.size) {
