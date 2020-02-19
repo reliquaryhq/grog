@@ -12,6 +12,14 @@ const PRODUCT_EXPAND = [
   'changelog',
 ];
 
+const getAccountProducts = (page, sortBy, mediaType = 1) =>
+  fetch(
+    `${GOG_WWW_URL}/account/getFilteredProducts?${getQuery({ hiddenFlag: 0, mediaType, page, sortBy })}`,
+    { headers: GOG_WWW_HEADERS },
+  )
+  .then(handleError)
+  .then(getJson);
+
 const getCatalogProducts = (page, sort, mediaType = null) =>
   fetch(
     `${GOG_WWW_URL}/games/ajax/filtered?${getQuery({ mediaType, page, sort })}`,
@@ -37,6 +45,7 @@ const getProduct = (productId) =>
   .then(getJson);
 
 export {
+  getAccountProducts,
   getCatalogProducts,
   getDownlink,
   getProduct,
