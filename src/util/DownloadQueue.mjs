@@ -95,7 +95,7 @@ class DownloadQueue {
         name: formatFixedWidthString(url.pathname, 50, 'right'),
       });
 
-      if (!download.alreadyDownloaded) {
+      if (!download.alreadyDownloaded && this.delay > 0) {
         await sleep(this.delay);
       }
     }
