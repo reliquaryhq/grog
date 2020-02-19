@@ -110,6 +110,7 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
         const download = {
           size,
           lastModified,
+          headers: response.headers,
         };
 
         if (hash) {
