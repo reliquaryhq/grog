@@ -15,17 +15,21 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
   };
 
   return new Promise((resolve, reject) => {
-    https.get(url, requestOptions, (response) => {
+    const request = https.get(url, requestOptions, (response) => {
       let rejecting = false;
 
       if (response.statusCode !== 200) {
         rejecting = true;
 
-        file.end();
-        if (hash) {
-          hash.end();
+        try {
+          file.end();
+          if (hash) {
+            hash.end();
+          }
+          fs.unlinkSync(path);
+        } catch (error) {
+          // ignore errors
         }
-        fs.unlinkSync(path);
 
         const error = new Error(`HTTP Error ${response.statusCode}`);
         error.statusCode = response.statusCode;
@@ -110,7 +114,8 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
         const download = {
           size,
           lastModified,
-          headers: response.headers,
+          contentType: response.headers['content-type'] || null,
+          headers: response.rawHeaders,
         };
 
         if (hash) {
@@ -123,6 +128,20 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
 
         resolve(download);
       });
+    });
+
+    request.on('error', (error) => {
+      try {
+        file.end();
+        if (hash) {
+          hash.end();
+        }
+        fs.unlinkSync(path);
+      } catch (error) {
+        // ignore errors
+      }
+
+      reject(error);
     });
   });
 };
