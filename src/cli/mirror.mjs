@@ -17,6 +17,8 @@ const handleMirrorProduct = async (_args, flags) => {
     await saveSession(session);
   }
 
+  const includeDepots = flags['include-depots'] || false;
+
   if (flags['all']) {
     const { totalPages } = await api.product.getCatalogProducts(1, 'release_desc');
     const firstPage = flags['page'] ? parseInt(flags['page'], 10) : 1;
@@ -27,14 +29,14 @@ const handleMirrorProduct = async (_args, flags) => {
       const { products = [] } = await api.product.getCatalogProducts(page, 'release_desc');
 
       for (const product of products) {
-        await mirrorProduct(product.id, ownedGames);
+        await mirrorProduct(product.id, ownedGames, includeDepots);
         await sleep(1000);
       }
     }
   } else {
     const productId = parseInt(flags['product-id'], 10);
 
-    await mirrorProduct(productId, ownedGames);
+    await mirrorProduct(productId, ownedGames, includeDepots);
   }
 };
 
