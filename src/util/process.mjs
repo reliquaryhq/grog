@@ -4,6 +4,10 @@ import childProcess from 'child_process';
 const config = dotenv.config();
 const env = config.parsed ? config.parsed : {};
 
+const shutdown = {
+  shuttingDown: false,
+};
+
 const exec = (command, options = {}) => {
   return new Promise((resolve, reject) => {
     childProcess.exec(command, options, (error, stdout, stderr) => {
@@ -16,7 +20,19 @@ const exec = (command, options = {}) => {
   });
 };
 
+const receiveShutdown = () => {
+  if (!shutdown.shuttingDown) {
+    shutdown.shuttingDown = true;
+
+    setTimeout(() => {
+      process.exit(0);
+    }, 5000);
+  }
+};
+
 export {
   env,
   exec,
+  receiveShutdown,
+  shutdown,
 };
