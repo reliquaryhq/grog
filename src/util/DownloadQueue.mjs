@@ -80,7 +80,7 @@ class DownloadQueue {
           onProgress,
         );
       } catch (error) {
-        progress.interrupt(`Error when handling entry: ${error}`);
+        progress.interrupt(`Error when handling entry: ${error}; url: ${entry.url}`);
         await sleep(this.delay);
         continue;
       }
