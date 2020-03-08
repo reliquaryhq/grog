@@ -24,7 +24,10 @@ const handleMirrorProduct = async (_args, flags) => {
     const firstPage = flags['page'] ? parseInt(flags['page'], 10) : 1;
 
     for (let page = firstPage; page <= totalPages; page++) {
+      console.log('');
+      console.log('-'.repeat(80));
       console.log(`Mirroring catalog products from page ${page} of ${totalPages}...`);
+      console.log('-'.repeat(80));
 
       const { products = [] } = await api.product.getCatalogProducts(page, 'release_desc');
 
