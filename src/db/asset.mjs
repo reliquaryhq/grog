@@ -13,6 +13,7 @@ const createAsset = ({
   assetType = null,
   lastModified = null,
   contentType = null,
+  headers = null,
 }) =>
   pool.query(sql`
     INSERT INTO assets (
@@ -33,7 +34,8 @@ const createAsset = ({
       updated_at,
       asset_type_id,
       last_modified,
-      content_type
+      content_type,
+      headers
     ) VALUES (
       ${productId},
       ${host},
@@ -52,7 +54,8 @@ const createAsset = ({
       NOW() AT TIME ZONE 'UTC',
       (SELECT id FROM asset_types WHERE slug = ${assetType}),
       ${lastModified ? lastModified.toISOString() : null},
-      ${contentType ? contentType : null}
+      ${contentType ? contentType : null},
+      ${headers ? JSON.stringify(headers) : null}
     ) RETURNING id;
   `);
 
