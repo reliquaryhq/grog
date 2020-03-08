@@ -1,5 +1,6 @@
 import https from 'https';
 import Progress from 'progress';
+import { shutdown } from './process.mjs';
 import { formatBytes, formatFixedWidthString } from './string.mjs';
 import { sleep } from './common.mjs';
 
@@ -45,6 +46,10 @@ class DownloadQueue {
     );
 
     for (const entry of entries) {
+      if (shutdown.shuttingDown) {
+        break;
+      }
+
       const url = new URL(entry.url);
 
       progress.tick(0, {

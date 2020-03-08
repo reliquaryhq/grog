@@ -1,5 +1,6 @@
 import { ensureDb, sleep } from '../util/common.mjs';
 import { mirrorProduct } from '../util/mirror.mjs';
+import { shutdown } from '../util/process.mjs';
 import { loadSession, saveSession } from '../util/session.mjs';
 import * as api from '../api.mjs';
 
@@ -32,6 +33,10 @@ const handleMirrorProduct = async (_args, flags) => {
       const { products = [] } = await api.product.getCatalogProducts(page, 'release_desc');
 
       for (const product of products) {
+        if (shutdown.shuttingDown) {
+          return;
+        }
+
         await mirrorProduct(product.id, ownedGames, includeDepots);
         await sleep(1000);
       }
