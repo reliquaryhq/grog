@@ -66,7 +66,8 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
   const asset = await syncAsset(entry, downloadPath, {
     hash: download.hash,
     lastModified: download.lastModified,
-    contentType: download.headers['content-type'] || null,
+    contentType: download.contentType || null,
+    headers: download.headers || null,
   });
 
   return {
@@ -175,6 +176,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
     assetType: entry.type,
     lastModified,
     contentType: known.contentType,
+    headers: known.headers,
   });
 
   return {
