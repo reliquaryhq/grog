@@ -21,6 +21,20 @@ const handleMirrorProduct = async (_args, flags) => {
   const includeDepots = flags['include-depots'] || false;
 
   if (flags['all']) {
+    console.log('');
+    console.log('-'.repeat(80));
+    console.log('Mirroring owned games...');
+    console.log('-'.repeat(80));
+
+    for (const productId of ownedGames) {
+      if (shutdown.shuttingDown) {
+        return;
+      }
+
+      await mirrorProduct(productId, ownedGames, includeDepots);
+      await sleep(1000);
+    }
+
     const { totalPages } = await api.product.getCatalogProducts(1, 'release_desc');
     const firstPage = flags['page'] ? parseInt(flags['page'], 10) : 1;
 
@@ -35,6 +49,11 @@ const handleMirrorProduct = async (_args, flags) => {
       for (const product of products) {
         if (shutdown.shuttingDown) {
           return;
+        }
+
+        // We've already mirrored owned games above
+        if (ownedGames.includes(product.id)) {
+          continue;
         }
 
         await mirrorProduct(product.id, ownedGames, includeDepots);
