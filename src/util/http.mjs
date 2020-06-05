@@ -116,6 +116,8 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
           lastModified,
           contentType: response.headers['content-type'] || null,
           headers: response.rawHeaders,
+          statusCode: response.statusCode,
+          statusText: response.statusMessage,
         };
 
         if (hash) {
