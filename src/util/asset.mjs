@@ -68,6 +68,8 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
     lastModified: download.lastModified,
     contentType: download.contentType || null,
     headers: download.headers || null,
+    statusCode: download.statusCode || null,
+    statusText: download.statusText || null,
   });
 
   return {
@@ -176,8 +178,18 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
     assetType: entry.type,
     lastModified,
     contentType: known.contentType,
-    headers: known.headers,
   });
+
+  const assetId = result.rows[0]['id'];
+
+  if (known.headers) {
+    await db.asset.createAssetResponse({
+      assetId,
+      headers: known.headers,
+      statusCode: known.statusCode,
+      statusText: known.statusText,
+    });
+  }
 
   return {
     id: result.rows[0]['id'],
