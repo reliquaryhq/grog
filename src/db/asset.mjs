@@ -13,7 +13,6 @@ const createAsset = ({
   assetType = null,
   lastModified = null,
   contentType = null,
-  headers = null,
 }) =>
   pool.query(sql`
     INSERT INTO assets (
@@ -34,8 +33,7 @@ const createAsset = ({
       updated_at,
       asset_type_id,
       last_modified,
-      content_type,
-      headers
+      content_type
     ) VALUES (
       ${productId},
       ${host},
@@ -54,8 +52,7 @@ const createAsset = ({
       NOW() AT TIME ZONE 'UTC',
       (SELECT id FROM asset_types WHERE slug = ${assetType}),
       ${lastModified ? lastModified.toISOString() : null},
-      ${contentType ? contentType : null},
-      ${headers ? JSON.stringify(headers) : null}
+      ${contentType ? contentType : null}
     ) RETURNING id;
   `);
 
@@ -136,9 +133,30 @@ const updateAsset = async ({
   }
 };
 
+const createAssetResponse = ({
+  assetId,
+  headers,
+  statusCode,
+  statusText,
+}) =>
+  pool.query(sql`
+    INSERT INTO asset_responses (
+      asset_id,
+      headers,
+      status_code,
+      status_text
+    ) VALUES (
+      ${assetId},
+      ${JSON.stringify(headers)},
+      ${statusCode ? statusCode : null},
+      ${statusText ? statusText : null}
+    ) RETURNING id;
+  `);
+
 export {
   createAsset,
   getAsset,
   getAssetById,
   updateAsset,
+  createAssetResponse,
 };
