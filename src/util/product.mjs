@@ -141,7 +141,36 @@ const getApiProductBuildsRevisionHash = (builds) => {
   return hashObject(normalizeApiProductBuilds(builds));
 };
 
+const getProductBuilds = async (productId, os = null) => {
+  const apiProductBuilds = await db.product.getAllApiProductBuilds({ productId });
+
+  const productBuilds = {};
+
+  for (const { data } of apiProductBuilds) {
+    for (const item of data.items || []) {
+      if (os && item.os !== os) {
+        continue;
+      }
+
+      const manifestUrl = item.urls[0].url;
+      const manifestPath = `/${manifestUrl.split('/').slice(3).join('/')}`;
+
+      productBuilds[item.build_id] = {
+        build_id: item.build_id,
+        generation: item.generation,
+        version_name: item.version_name,
+        product_id: item.product_id,
+        os: item.os,
+        manifest_path: manifestPath,
+      };
+    }
+  }
+
+  return Object.values(productBuilds);
+}
+
 export {
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
+  getProductBuilds,
 };

@@ -1,4 +1,5 @@
 import { ensureDb } from '../util/common.mjs';
+import { getProductBuilds } from '../util/product.mjs';
 import * as db from '../db.mjs';
 
 const handleReadProduct = async (_args, flags) => {
@@ -28,41 +29,14 @@ const handleReadProductBuilds = async (_args, flags) => {
   const productId = flags['product-id'];
   const os = flags['os'];
 
-  const productBuilds = await db.product.getAllApiProductBuilds({ productId });
-
-  if (!productBuilds) {
-    console.log('Product builds not found');
-    return;
-  }
-
-  const mergedProductBuilds = {};
-
-  for (const { data } of productBuilds) {
-    for (const item of data.items || []) {
-      if (os && item.os !== os) {
-        continue;
-      }
-
-      const manifestUrl = item.urls[0].url;
-      const manifestPath = `/${manifestUrl.split('/').slice(3).join('/')}`;
-
-      mergedProductBuilds[item.build_id] = {
-        build_id: item.build_id,
-        generation: item.generation,
-        version_name: item.version_name,
-        product_id: item.product_id,
-        os: item.os,
-        manifest_path: manifestPath,
-      };
-    }
-  }
+  const productBuilds = await getProductBuilds(productId, os);
 
   if (flags['as-json']) {
-    console.log(JSON.stringify(Object.values(mergedProductBuilds), null, 2));
+    console.log(JSON.stringify(Object.values(productBuilds), null, 2));
     return;
   }
 
-  console.log(Object.values(mergedProductBuilds));
+  console.log(Object.values(productBuilds));
 };
 
 const handleRead = async ([command, ...args], flags) => {
