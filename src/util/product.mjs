@@ -1,5 +1,12 @@
+import path from 'path';
+import zlib from 'zlib';
+import fs from 'fs-extra';
 import _ from 'lodash';
+import { GOG_CDN_URL } from './api.mjs';
+import { readAsset } from './asset.mjs';
 import { hashObject, sortObject } from './common.mjs';
+import { env, shutdown } from './process.mjs';
+import { formatBytes, formatPath22 } from './string.mjs';
 import * as db from '../db.mjs';
 
 const createOrUpdateApiProduct = async (productId, data, fetchedAt) => {
@@ -169,8 +176,103 @@ const getProductBuilds = async (productId, os = null) => {
   return Object.values(productBuilds);
 }
 
+const installV2Item = async (productId, item, installDirectory) => {
+  const itemPathParts = item.path.split(/[/\\]/);
+  const outputPath = path.join(installDirectory, ...itemPathParts);
+  const size = item.chunks.reduce((s, chunk) => s + (chunk.size || 0), 0);
+
+  await fs.mkdirp(path.dirname(outputPath));
+
+  if (await fs.exists(outputPath)) {
+    const stat = await fs.stat(outputPath);
+
+    if (stat.size === size) {
+      // Nothing to do: item is already present and has the right size
+      return;
+    }
+
+    // Remove incomplete file
+    console.log(`Removing incomplete file: ${itemPathParts.join('/')}`);
+    await fs.unlink(outputPath);
+  }
+
+  console.log(`Installing ${itemPathParts.join('/')} (${formatBytes(size)})`);
+
+  for (const chunk of item.chunks) {
+    if (shutdown.shuttingDown) {
+      return;
+    }
+
+    const chunkUrl = `${GOG_CDN_URL}/content-system/v2/store/${productId}/${formatPath22(chunk.compressedMd5)}`;
+    const chunkData = await readAsset({ url: chunkUrl }, env.GROG_DATA_DIR);
+    const chunkContent = zlib.inflateSync(chunkData);
+
+    if (chunkContent.length !== chunk.size) {
+      throw new Error(`Chunk size mismatch: ${chunkContent.length} !== ${chunk.size}`);
+    }
+
+    // TODO compare md5
+
+    await fs.appendFile(outputPath, chunkContent);
+  }
+
+  if ((item.flags || []).includes('executable')) {
+    await fs.chmod(outputPath, '744');
+  }
+};
+
+const installV2Product = async (productBuild, destination, language = 'en-US') => {
+  const repositoryManifestUrl = `${GOG_CDN_URL}${productBuild.manifest_path}`;
+  const repositoryManifestData = await readAsset({ url: repositoryManifestUrl }, env.GROG_DATA_DIR);
+  const repositoryManifest = JSON.parse(zlib.inflateSync(repositoryManifestData));
+
+  console.log(`Installing product; product id: ${productBuild.product_id}; build id: ${productBuild.build_id}; generation: 2; os: ${productBuild.os}`);
+
+  const selectedDepots = repositoryManifest.depots.filter((depot) => depot.languages.includes('*') || depot.languages.includes(language));
+
+  console.log(`Selected ${selectedDepots.length} depots`);
+
+  const installDirectory = path.join(destination, repositoryManifest.installDirectory);
+
+  console.log(`Installing to ${installDirectory}`);
+
+  for (const depot of selectedDepots) {
+    const depotManifestUrl = `${GOG_CDN_URL}/content-system/v2/meta/${formatPath22(depot.manifest)}`;
+    const depotManifestData = await readAsset({ url: depotManifestUrl }, env.GROG_DATA_DIR);
+    const depotManifest = JSON.parse(zlib.inflateSync(depotManifestData));
+
+    const { items } = depotManifest.depot;
+
+    console.log(`Installing ${items.length} items from depot ${depot.manifest}`);
+
+    for (const item of items) {
+      if (shutdown.shuttingDown) {
+        return;
+      }
+
+      await installV2Item(depot.productId, item, installDirectory);
+    }
+  }
+};
+
+const installProduct = async (productId, buildId, destination, language = 'en-US') => {
+  const productBuilds = await getProductBuilds(productId);
+  const productBuild = productBuilds.find((productBuild) => productBuild.build_id === buildId);
+
+  if (!productBuild) {
+    throw new Error('Product build not found');
+  }
+
+  if (productBuild.generation === 2) {
+    await installV2Product(productBuild, destination, language);
+  } else {
+    throw new Error(`Unsupported generation: ${productBuild.generation}`);
+  }
+};
+
 export {
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
   getProductBuilds,
+  installProduct,
 };

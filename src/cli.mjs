@@ -1,6 +1,7 @@
 import { handleAuth } from './cli/auth.mjs';
 import { handleCompose } from './cli/compose.mjs';
 import { handleInit } from './cli/init.mjs';
+import { handleInstall } from './cli/install.mjs';
 import { handleMirror } from './cli/mirror.mjs';
 import { handleRead } from './cli/read.mjs';
 
@@ -16,6 +17,10 @@ const handleCommand = async ([command, ...args], flags) => {
 
     case 'init': {
       return handleInit(args, flags);
+    }
+
+    case 'install': {
+      return handleInstall(args, flags);
     }
 
     case 'mirror': {
