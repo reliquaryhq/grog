@@ -34,7 +34,11 @@ const handleMirrorProduct = async (_args, flags) => {
           return;
         }
 
-        await mirrorProduct(productId, ownedGames, includeDepots);
+        try {
+          await mirrorProduct(productId, ownedGames, includeDepots);
+        } catch (error) {
+          console.error(error);
+        }
 
         await sleep(1000);
       }
@@ -61,7 +65,11 @@ const handleMirrorProduct = async (_args, flags) => {
           continue;
         }
 
-        await mirrorProduct(product.id, ownedGames, includeDepots);
+        try {
+          await mirrorProduct(product.id, ownedGames, includeDepots);
+        } catch (error) {
+          console.error(error);
+        }
 
         await sleep(1000);
       }
