@@ -93,6 +93,15 @@ const getApiProductBuilds = async ({
     );
   `)).rows[0];
 
+const getAllApiProductBuilds = async ({
+  productId,
+}) =>
+  (await pool.query(sql`
+    SELECT *
+    FROM api_product_builds
+    WHERE product_id = ${productId};
+  `)).rows;
+
 const getApiProductBuildRepositoryPaths = async ({
   productId,
 }) => {
@@ -175,6 +184,7 @@ export {
   getApiProductBuildRepositoryPaths,
   getApiProduct,
   getApiProductBuilds,
+  getAllApiProductBuilds,
   observeApiProductRevision,
   observeApiProductBuildsRevision,
 };
