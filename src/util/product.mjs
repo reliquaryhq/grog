@@ -188,7 +188,11 @@ const installV2Item = async (productId, item, installDirectory) => {
   const outputPath = path.join(installDirectory, ...itemPathParts);
   const size = (item.chunks || []).reduce((s, chunk) => s + (chunk.size || 0), 0);
 
-  await fs.mkdirp(path.dirname(outputPath));
+  if (item.type === 'DepotFile') {
+    await fs.mkdirp(path.dirname(outputPath));
+  } else if (item.type === 'DepotDirectory') {
+    await fs.mkdirp(outputPath);
+  }
 
   if (item.type === 'DepotDirectory') {
     // Nothing left to do
