@@ -179,7 +179,7 @@ const getProductBuilds = async (productId, os = null) => {
 const installV2Item = async (productId, item, installDirectory) => {
   let itemPathParts = item.path.split(/[/\\]/);
 
-  if (item.flags && item.flags.includes('support')) {
+  if ((item.flags || []).includes('support')) {
     if (itemPathParts[0].trim().toLowerCase() === 'app') {
       itemPathParts = itemPathParts.slice(1);
     }
