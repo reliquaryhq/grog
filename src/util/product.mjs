@@ -179,9 +179,14 @@ const getProductBuilds = async (productId, os = null) => {
 const installV2Item = async (productId, item, installDirectory) => {
   const itemPathParts = item.path.split(/[/\\]/);
   const outputPath = path.join(installDirectory, ...itemPathParts);
-  const size = item.chunks.reduce((s, chunk) => s + (chunk.size || 0), 0);
+  const size = (item.chunks || []).reduce((s, chunk) => s + (chunk.size || 0), 0);
 
   await fs.mkdirp(path.dirname(outputPath));
+
+  if (item.type === 'DepotDirectory') {
+    // Nothing left to do
+    return;
+  }
 
   if (await fs.exists(outputPath)) {
     const stat = await fs.stat(outputPath);
