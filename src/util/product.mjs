@@ -214,6 +214,13 @@ const installV2Item = async (productId, item, installDirectory) => {
 
   console.log(`Installing ${itemPathParts.join('/')} (${formatBytes(size)})`);
 
+  if (item.chunks.length === 0) {
+    await fs.writeFile(outputPath, '');
+
+    // Nothing to do: the file contains no content
+    return;
+  }
+
   for (const chunk of item.chunks) {
     if (shutdown.shuttingDown) {
       return;
