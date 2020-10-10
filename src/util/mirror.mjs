@@ -5,6 +5,7 @@ import DownloadQueue from './DownloadQueue.mjs';
 import SecureLinkV2 from '../core/SecureLinkV2.mjs';
 import { GOG_CDN_URL, GOG_IMAGES_URL } from './api.mjs';
 import { downloadAsset, readAsset } from './asset.mjs';
+import { createBuildsFromApiProductBuilds } from './build.mjs';
 import { env } from './process.mjs';
 import { createOrUpdateApiProduct, createOrUpdateApiProductBuilds } from './product.mjs';
 import { loadSession, saveSession } from './session.mjs';
@@ -12,6 +13,7 @@ import { formatPath22 } from './string.mjs';
 import * as api from '../api.mjs';
 import * as db from '../db.mjs';
 import { shutdown } from './process.mjs';
+import { createProductFromApiProduct } from './product.mjs';
 
 const mirrorV1Depot = async (manifestPath, _productId) => {
   const manifestUrl = `${GOG_CDN_URL}${manifestPath}`;
@@ -470,7 +472,8 @@ const mirrorProduct = async (productId, ownedProductIds, includeDepots = false) 
 
   console.log(`\nMirroring product; product: ${productId}; title: ${productData['title']}; owned: ${ownedProductIds.includes(productId)}`);
 
-  await createOrUpdateApiProduct(productId, productData, productFetchedAt);
+  const apiProduct = await createOrUpdateApiProduct(productId, productData, productFetchedAt);
+  const productRecord = await createProductFromApiProduct(apiProduct);
 
   const oss = Object.keys(productData['content_system_compatibility'])
     .filter((os) => productData['content_system_compatibility'][os]);
@@ -493,11 +496,13 @@ const mirrorProduct = async (productId, ownedProductIds, includeDepots = false) 
 
     if (buildsData) {
       const buildsFetchedAt = new Date();
-      await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
+      const apiProductBuilds = await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
+      await createBuildsFromApiProductBuilds(productRecord, apiProductBuilds);
     }
   }
 
-  const buildRepositoryPaths = await db.product.getApiProductBuildRepositoryPaths({ productId });
+  const productBuilds = await db.build.getBuilds({ productId: productRecord.id });
+  const buildRepositoryPaths = productBuilds.map((build) => build.repository_path);
 
   await mirrorRepositoryManifests(productId, buildRepositoryPaths);
 

@@ -9,6 +9,24 @@ import { env, shutdown } from './process.mjs';
 import { formatBytes, formatPath22 } from './string.mjs';
 import * as db from '../db.mjs';
 
+const createProductFromApiProduct = async (apiProduct) => {
+  if (!apiProduct || !apiProduct.data) {
+    return;
+  }
+
+  let productRecord = await db.product.getProduct({ gogId: apiProduct.data.id });
+
+  if (!productRecord) {
+    productRecord = await db.product.createProduct({
+      gogId: apiProduct.data.id,
+      title: apiProduct.data.title,
+      slug: apiProduct.data.slug,
+    });
+  }
+
+  return productRecord;
+};
+
 const createOrUpdateApiProduct = async (productId, data, fetchedAt) => {
   const revisionHash = getApiProductRevisionHash(data);
   const existingApiProduct = await db.product.getApiProduct({ productId });
@@ -17,11 +35,13 @@ const createOrUpdateApiProduct = async (productId, data, fetchedAt) => {
     if (existingApiProduct['revision_hash'] === revisionHash) {
       console.log(`Updating api product revision last seen at; product: ${productId}; revision: ${existingApiProduct['revision']}`);
 
-      return db.product.observeApiProductRevision({
+      await db.product.observeApiProductRevision({
         productId,
         revision: existingApiProduct['revision'],
         revisionLastSeenAt: fetchedAt,
       });
+
+      return db.product.getApiProduct({ productId });
     } else {
       console.log(`Creating new api product revision; product: ${productId}; revision: ${existingApiProduct['revision'] + 1}`);
 
@@ -60,12 +80,14 @@ const createOrUpdateApiProductBuilds = async (productId, os, data, fetchedAt) =>
     if (existingApiProductBuilds['revision_hash'] === revisionHash) {
       console.log(`Updating api product builds revision last seen at; product: ${productId}; os: ${os}; revision: ${existingApiProductBuilds['revision']}`);
 
-      return db.product.observeApiProductBuildsRevision({
+      await db.product.observeApiProductBuildsRevision({
         productId,
         os,
         revision: existingApiProductBuilds['revision'],
         revisionLastSeenAt: fetchedAt,
       });
+
+      return db.product.getApiProductBuilds({ productId, os });
     } else {
       console.log(`Creating new api product builds revision; product: ${productId}; os: ${os}; revision: ${existingApiProductBuilds['revision'] + 1}`);
 
@@ -294,6 +316,7 @@ const installProduct = async (productId, buildId, destination, language = 'en-US
 };
 
 export {
+  createProductFromApiProduct,
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
   getProductBuilds,

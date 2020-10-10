@@ -1,7 +1,54 @@
-import _ from 'lodash';
 import { pool, sql } from '../util/db.mjs';
 
-const createApiProductRevision = ({
+const createProduct = async ({
+  gogId,
+  title = null,
+  slug = null,
+  createdAt = new Date(),
+}) => (await pool.query(sql`
+  INSERT INTO products (
+    gog_id,
+    title,
+    slug,
+    created_at,
+    updated_at
+  ) VALUES (
+    ${gogId.toString()},
+    ${title},
+    ${slug},
+    ${createdAt.toISOString()},
+    ${createdAt.toISOString()}
+  ) RETURNING *;
+`)).rows[0];
+
+const getProduct = async ({
+  id,
+  gogId,
+}) => {
+  if (id) {
+    const query = await pool.query(sql`
+      SELECT *
+      FROM products
+      WHERE id = ${id};
+    `);
+
+    return query.rows[0];
+  }
+
+  if (gogId) {
+    const query = await pool.query(sql`
+      SELECT *
+      FROM products
+      WHERE gog_id = ${gogId.toString()};
+    `);
+
+    return query.rows[0];
+  }
+
+  throw new Error('id or gogId is required');
+};
+
+const createApiProductRevision = async ({
   productId,
   title,
   slug,
@@ -11,7 +58,7 @@ const createApiProductRevision = ({
   revisionFirstSeenAt,
   revisionLastSeenAt,
 }) =>
-  pool.query(sql`
+  (await pool.query(sql`
     INSERT INTO api_products (
       product_id,
       title,
@@ -30,10 +77,10 @@ const createApiProductRevision = ({
       ${revisionHash},
       ${revisionFirstSeenAt.toISOString()},
       ${revisionLastSeenAt.toISOString()}
-    );
-  `);
+    ) RETURNING *;
+  `)).rows[0];
 
-const createApiProductBuildsRevision = ({
+const createApiProductBuildsRevision = async ({
   productId,
   os,
   data,
@@ -42,7 +89,7 @@ const createApiProductBuildsRevision = ({
   revisionFirstSeenAt,
   revisionLastSeenAt,
 }) =>
-  pool.query(sql`
+  (await pool.query(sql`
     INSERT INTO api_product_builds (
       product_id,
       os,
@@ -59,8 +106,8 @@ const createApiProductBuildsRevision = ({
       ${revisionHash},
       ${revisionFirstSeenAt.toISOString()},
       ${revisionLastSeenAt.toISOString()}
-    );
-  `);
+    ) RETURNING *;
+  `)).rows[0];
 
 const getApiProduct = async ({
   productId,
@@ -102,55 +149,6 @@ const getAllApiProductBuilds = async ({
     WHERE product_id = ${productId};
   `)).rows;
 
-const getApiProductBuildRepositoryPaths = async ({
-  productId,
-}) => {
-  const query = await pool.query(sql`
-    SELECT distinct(urls ->> 'url')
-    AS url
-    FROM (
-      SELECT jsonb_array_elements(items -> 'urls')
-      AS urls
-      FROM (
-        SELECT jsonb_array_elements(data -> 'items')
-        AS items
-        FROM api_product_builds
-        WHERE product_id = ${productId}
-      ) items
-    ) urls
-    ORDER BY url desc;
-  `);
-
-  const urls = query.rows
-    .map((row) => row['url'])
-    .map((url) => new URL(url).pathname);
-
-  return _.uniq(urls).sort();
-};
-
-const getAllApiProductBuildRepositoryPaths = async () => {
-  const query = await pool.query(sql`
-    SELECT distinct(urls ->> 'url')
-    AS url
-    FROM (
-      SELECT jsonb_array_elements(items -> 'urls')
-      AS urls
-      FROM (
-        SELECT jsonb_array_elements(data -> 'items')
-        AS items
-        FROM api_product_builds
-      ) items
-    ) urls
-    ORDER BY url desc;
-  `);
-
-  const urls = query.rows
-    .map((row) => row['url'])
-    .map((url) => new URL(url).pathname);
-
-  return _.uniq(urls).sort();
-};
-
 const observeApiProductRevision = ({
   productId,
   revision,
@@ -178,10 +176,10 @@ const observeApiProductBuildsRevision = ({
   `);
 
 export {
+  createProduct,
+  getProduct,
   createApiProductRevision,
   createApiProductBuildsRevision,
-  getAllApiProductBuildRepositoryPaths,
-  getApiProductBuildRepositoryPaths,
   getApiProduct,
   getApiProductBuilds,
   getAllApiProductBuilds,
