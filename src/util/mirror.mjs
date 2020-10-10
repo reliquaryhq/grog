@@ -16,6 +16,10 @@ import { shutdown } from './process.mjs';
 import { createProductFromApiProduct } from './product.mjs';
 
 const mirrorV1Depot = async (manifestPath, _productId) => {
+  if (shutdown.shuttingDown) {
+    return;
+  }
+
   const manifestUrl = `${GOG_CDN_URL}${manifestPath}`;
   const manifestData = await readAsset({ url: manifestUrl }, env.GROG_DATA_DIR);
   const manifest = JSON.parse(manifestData);
@@ -104,6 +108,10 @@ const mirrorV2Depot = async (manifestPath, productId) => {
 };
 
 const mirrorV2OfflineDepot = async (manifestPath, productId) => {
+  if (shutdown.shuttingDown) {
+    return;
+  }
+
   const manifestUrl = `${GOG_CDN_URL}${manifestPath}`;
   const manifestData = await readAsset({ url: manifestUrl }, env.GROG_DATA_DIR);
   const manifest = JSON.parse(zlib.inflateSync(manifestData));
@@ -157,6 +165,10 @@ const mirrorV2OfflineDepot = async (manifestPath, productId) => {
 
 const mirrorDepots = async (repositoryPaths, ownedProductIds) => {
   for (const repositoryPath of repositoryPaths) {
+    if (shutdown.shuttingDown) {
+      return;
+    }
+
     const repositoryUrl = `${GOG_CDN_URL}${repositoryPath}`;
     const repositoryData = await readAsset({ url: repositoryUrl }, env.GROG_DATA_DIR);
 
