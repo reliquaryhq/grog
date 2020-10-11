@@ -101,9 +101,19 @@ const syncBuildRepositoryGen2 = async (repository, _repositoryPath) => {
   }
 
   for (const repositoryDepot of repository.depots || []) {
-    const product = await db.product.getProduct({
+    if (!repositoryDepot.productId) {
+      continue;
+    }
+
+    let product = await db.product.getProduct({
       gogId: repositoryDepot.productId,
     });
+
+    if (!product) {
+      product = await db.product.createProduct({
+        gogId: repositoryDepot.productId,
+      });
+    }
 
     let depot = await db.depot.getDepot({
       productId: product.id,
