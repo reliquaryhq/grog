@@ -28,6 +28,89 @@ const createBuildsFromApiProductBuilds = async (product, apiProductBuilds) => {
   }
 };
 
+const createV2BuildDepotsFromRepository = async (repository) => {
+  const build = await db.build.getBuild({ gogId: repository.buildId });
+
+  if (!build) {
+    throw new Error(`Missing build: ${repository.buildId}`);
+  }
+
+  for (const repositoryDepot of repository.depots || []) {
+    const product = await db.product.getProduct({
+      gogId: repositoryDepot.productId,
+    });
+
+    let depot = await db.depot.getDepot({
+      productId: product.id,
+      manifest: repositoryDepot.manifest,
+    });
+
+    if (!depot) {
+      depot = await db.depot.createDepot({
+        productId: product.id,
+        manifest: repositoryDepot.manifest,
+        size: repositoryDepot.size,
+        compressedSize: repositoryDepot.compressedSize,
+        languages: repositoryDepot.languages,
+        bitness: repositoryDepot.osBitness,
+        isGogDepot: repositoryDepot.isGogDepot,
+        isOfflineDepot: false,
+      });
+    }
+
+    let buildDepot = await db.build.getBuildDepot({
+      buildId: build.id,
+      depotId: depot.id,
+    });
+
+    if (!buildDepot) {
+      buildDepot = await db.build.createBuildDepot({
+        buildId: build.id,
+        depotId: depot.id,
+      });
+    }
+  }
+
+  if (repository.offlineDepot) {
+    const repositoryDepot = repository.offlineDepot;
+
+    const product = await db.product.getProduct({
+      gogId: repositoryDepot.productId,
+    });
+
+    let depot = await db.depot.getDepot({
+      productId: product.id,
+      manifest: repositoryDepot.manifest,
+    });
+
+    if (!depot) {
+      depot = await db.depot.createDepot({
+        productId: product.id,
+        manifest: repositoryDepot.manifest,
+        size: repositoryDepot.size,
+        compressedSize: repositoryDepot.compressedSize,
+        languages: repositoryDepot.languages,
+        bitness: repositoryDepot.osBitness,
+        isGogDepot: repositoryDepot.isGogDepot,
+        isOfflineDepot: true,
+      });
+    }
+
+    let buildDepot = await db.build.getBuildDepot({
+      buildId: build.id,
+      depotId: depot.id,
+    });
+
+    if (!buildDepot) {
+      buildDepot = await db.build.createBuildDepot({
+        buildId: build.id,
+        depotId: depot.id,
+      });
+    }
+  }
+};
+
 export {
   createBuildsFromApiProductBuilds,
+  createV2BuildDepotsFromRepository,
 };

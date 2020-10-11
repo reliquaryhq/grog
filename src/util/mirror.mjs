@@ -5,7 +5,7 @@ import DownloadQueue from './DownloadQueue.mjs';
 import SecureLinkV2 from '../core/SecureLinkV2.mjs';
 import { GOG_CDN_URL, GOG_IMAGES_URL } from './api.mjs';
 import { downloadAsset, readAsset } from './asset.mjs';
-import { createBuildsFromApiProductBuilds } from './build.mjs';
+import { createBuildsFromApiProductBuilds, createV2BuildDepotsFromRepository } from './build.mjs';
 import { env } from './process.mjs';
 import { createOrUpdateApiProduct, createOrUpdateApiProductBuilds } from './product.mjs';
 import { loadSession, saveSession } from './session.mjs';
@@ -263,6 +263,8 @@ const mirrorDepotManifests = async (repositoryPaths) => {
     } else if (repositoryPath.startsWith('/content-system/v2')) {
       const repository = JSON.parse(zlib.inflateSync(repositoryData));
       const { depots = [], offlineDepot } = repository;
+
+      await createV2BuildDepotsFromRepository(repository);
 
       for (const depot of depots) {
         if (!depot.manifest) {

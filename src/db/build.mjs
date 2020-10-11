@@ -89,8 +89,62 @@ const getBuild = async ({
   productId,
 }))[0];
 
+const createBuildDepot = async ({
+  buildId,
+  depotId,
+}) => (await pool.query(sql`
+  INSERT INTO build_depots (
+    build_id,
+    depot_id
+  ) VALUES (
+    ${buildId},
+    ${depotId}
+  ) RETURNING *;
+`)).rows[0];
+
+const getBuildDepots = async ({
+  buildId,
+  depotId,
+}) => {
+  const where = [];
+
+  if (buildId === null) {
+    where.push(sql`build_id IS NULL`);
+  } else if (buildId !== undefined) {
+    where.push(sql`build_id = ${buildId}`);
+  }
+
+  if (depotId === null) {
+    where.push(sql`depot_id IS NULL`);
+  } else if (depotId !== undefined) {
+    where.push(sql`depot_id = ${depotId}`);
+  }
+
+  if (where.length === 0) {
+    return (await pool.query(sql`
+      SELECT * FROM build_depots
+    `)).rows;
+  }
+
+  return (await pool.query(sql`
+    SELECT * FROM build_depots
+    WHERE ${sql.join(where, sql` AND `)};
+  `)).rows;
+};
+
+const getBuildDepot = async ({
+  buildId,
+  depotId,
+}) => (await getBuildDepots({
+  buildId,
+  depotId,
+}))[0];
+
 export {
   createBuild,
   getBuild,
   getBuilds,
+  createBuildDepot,
+  getBuildDepot,
+  getBuildDepots,
 };
