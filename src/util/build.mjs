@@ -58,15 +58,25 @@ const syncBuildRepositoryGen1 = async (repository, repositoryPath) => {
       continue;
     }
 
-    const depotProductGogId = (repositoryDepot.gameIDs || [])[0];
-    const depotProduct = depotProductGogId
-      ? await db.product.getProduct({ gogId: depotProductGogId })
-      : buildProduct;
-
     const manifest = repositoryDepot.manifest.split('.json')[0];
     const size = repositoryDepot.size === undefined || repositoryDepot.size === null
       ? null
       : parseInt(repositoryDepot.size, 10);
+
+    let depotProduct = buildProduct;
+
+    const depotProductGogId = (repositoryDepot.gameIDs || [])[0];
+    if (depotProductGogId) {
+      depotProduct = await db.product.getProduct({
+        gogId: depotProductGogId,
+      });
+
+      if (!depotProduct) {
+        depotProduct = await db.product.createProduct({
+          gogId: depotProductGogId,
+        });
+      }
+    }
 
     let depot = await db.depot.getDepot({
       productId: depotProduct.id,
