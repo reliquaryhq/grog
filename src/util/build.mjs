@@ -64,6 +64,9 @@ const syncBuildRepositoryGen1 = async (repository, repositoryPath) => {
       : buildProduct;
 
     const manifest = repositoryDepot.manifest.split('.json')[0];
+    const size = repositoryDepot.size === undefined || repositoryDepot.size === null
+      ? null
+      : parseInt(repositoryDepot.size, 10);
 
     let depot = await db.depot.getDepot({
       productId: depotProduct.id,
@@ -74,7 +77,7 @@ const syncBuildRepositoryGen1 = async (repository, repositoryPath) => {
       depot = await db.depot.createDepot({
         productId: depotProduct.id,
         manifest: manifest,
-        size: parseInt(repositoryDepot.size, 10),
+        size: size,
         languages: repositoryDepot.languages,
       });
     }
