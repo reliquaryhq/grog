@@ -28,7 +28,7 @@ const createBuildsFromApiProductBuilds = async (product, apiProductBuilds) => {
   }
 };
 
-const createV2BuildDepotsFromRepository = async (repository) => {
+const syncBuildRepositoryGen2 = async (repository) => {
   const build = await db.build.getBuild({ gogId: repository.buildId });
 
   if (!build) {
@@ -112,5 +112,5 @@ const createV2BuildDepotsFromRepository = async (repository) => {
 
 export {
   createBuildsFromApiProductBuilds,
-  createV2BuildDepotsFromRepository,
+  syncBuildRepositoryGen2,
 };
