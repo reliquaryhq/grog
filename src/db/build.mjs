@@ -45,6 +45,7 @@ const createBuild = async ({
 const getBuilds = async ({
   id,
   gogId,
+  gogLegacyId,
   productId,
 }) => {
   const where = [];
@@ -59,6 +60,12 @@ const getBuilds = async ({
     where.push(sql`gog_id IS NULL`);
   } else if (gogId !== undefined) {
     where.push(sql`gog_id = ${gogId}`);
+  }
+
+  if (gogLegacyId === null) {
+    where.push(sql`gog_legacy_id IS NULL`);
+  } else if (gogLegacyId !== undefined) {
+    where.push(sql`gog_legacy_id = ${gogLegacyId}`);
   }
 
   if (productId === null) {
@@ -82,10 +89,12 @@ const getBuilds = async ({
 const getBuild = async ({
   id,
   gogId,
+  gogLegacyId,
   productId,
 }) => (await getBuilds({
   id,
   gogId,
+  gogLegacyId,
   productId,
 }))[0];
 

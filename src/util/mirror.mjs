@@ -5,7 +5,11 @@ import DownloadQueue from './DownloadQueue.mjs';
 import SecureLinkV2 from '../core/SecureLinkV2.mjs';
 import { GOG_CDN_URL, GOG_IMAGES_URL } from './api.mjs';
 import { downloadAsset, readAsset } from './asset.mjs';
-import { createBuildsFromApiProductBuilds, syncBuildRepositoryGen2 } from './build.mjs';
+import {
+  createBuildsFromApiProductBuilds,
+  syncBuildRepositoryGen1,
+  syncBuildRepositoryGen2,
+} from './build.mjs';
 import { env } from './process.mjs';
 import { createOrUpdateApiProduct, createOrUpdateApiProductBuilds } from './product.mjs';
 import { loadSession, saveSession } from './session.mjs';
@@ -239,6 +243,9 @@ const mirrorDepotManifests = async (repositoryPaths) => {
 
     if (repositoryPath.startsWith('/content-system/v1')) {
       const repository = JSON.parse(repositoryData.toString('utf8'));
+
+      await syncBuildRepositoryGen1(repository, repositoryPath);
+
       const { product: { depots = [], rootGameID } = {} } = repository;
       const rootGameId = rootGameID ? parseInt(rootGameID, 10) : null;
 
@@ -262,9 +269,10 @@ const mirrorDepotManifests = async (repositoryPaths) => {
       }
     } else if (repositoryPath.startsWith('/content-system/v2')) {
       const repository = JSON.parse(zlib.inflateSync(repositoryData));
-      const { depots = [], offlineDepot } = repository;
 
-      await syncBuildRepositoryGen2(repository);
+      await syncBuildRepositoryGen2(repository, repositoryPath);
+
+      const { depots = [], offlineDepot } = repository;
 
       for (const depot of depots) {
         if (!depot.manifest) {

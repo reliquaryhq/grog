@@ -28,7 +28,72 @@ const createBuildsFromApiProductBuilds = async (product, apiProductBuilds) => {
   }
 };
 
-const syncBuildRepositoryGen2 = async (repository) => {
+const syncBuildRepositoryGen1 = async (repository, repositoryPath) => {
+  if (!repository.product) {
+    return;
+  }
+
+  const buildProductGogId = repository.product.rootGameID;
+  const buildGogLegacyId = repositoryPath.split('/')[6];
+
+  const buildProduct = await db.product.getProduct({
+    gogId: buildProductGogId,
+  });
+
+  if (!buildProduct) {
+    throw new Error(`Missing product: ${buildProductGogId}`);
+  }
+
+  const build = await db.build.getBuild({
+    productId: buildProduct.id,
+    gogLegacyId: buildGogLegacyId,
+  });
+
+  if (!build) {
+    throw new Error(`Missing build: ${buildGogLegacyId}`);
+  }
+
+  for (const repositoryDepot of repository.product.depots || []) {
+    if (repositoryDepot.redist) {
+      continue;
+    }
+
+    const depotProductGogId = (repositoryDepot.gameIDs || [])[0];
+    const depotProduct = depotProductGogId
+      ? await db.product.getProduct({ gogId: depotProductGogId })
+      : buildProduct;
+
+    const manifest = repositoryDepot.manifest.split('.json')[0];
+
+    let depot = await db.depot.getDepot({
+      productId: depotProduct.id,
+      manifest: manifest,
+    });
+
+    if (!depot) {
+      depot = await db.depot.createDepot({
+        productId: depotProduct.id,
+        manifest: manifest,
+        size: parseInt(repositoryDepot.size, 10),
+        languages: repositoryDepot.languages,
+      });
+    }
+
+    let buildDepot = await db.build.getBuildDepot({
+      buildId: build.id,
+      depotId: depot.id,
+    });
+
+    if (!buildDepot) {
+      buildDepot = await db.build.createBuildDepot({
+        buildId: build.id,
+        depotId: depot.id,
+      });
+    }
+  }
+};
+
+const syncBuildRepositoryGen2 = async (repository, _repositoryPath) => {
   const build = await db.build.getBuild({ gogId: repository.buildId });
 
   if (!build) {
@@ -112,5 +177,6 @@ const syncBuildRepositoryGen2 = async (repository) => {
 
 export {
   createBuildsFromApiProductBuilds,
+  syncBuildRepositoryGen1,
   syncBuildRepositoryGen2,
 };
