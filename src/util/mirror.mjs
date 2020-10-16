@@ -165,12 +165,17 @@ const mirrorV2OfflineDepot = async (manifestPath, productId) => {
     throw new Error(`Unsupported depot manifest version: ${manifest.version}`);
   }
 
+  const mirroredChunkMd5s = await db.asset.getOfflineChunkMd5s();
+
   const manifestId = manifestPath.split('/').slice(-1)[0];
-  console.log(`Syncing V2 offline depot for owned product; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
 
   const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 10);
 
   const addChunk = (chunk) => {
+    if (mirroredChunkMd5s[chunk.compressedMd5]) {
+      return;
+    }
+
     const path = formatPath22(chunk.compressedMd5);
     const url = `${GOG_CDN_URL}/content-system/v2/offline/${path}`;
 
@@ -205,7 +210,10 @@ const mirrorV2OfflineDepot = async (manifestPath, productId) => {
     }
   }
 
-  await depotQueue.run();
+  if (depotQueue.length > 0) {
+    console.log(`Syncing V2 offline depot for owned product; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
+    await depotQueue.run();
+  }
 };
 
 const mirrorDepots = async (repositoryPaths, ownedProductIds) => {

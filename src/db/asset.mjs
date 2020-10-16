@@ -183,6 +183,34 @@ const getChunkMd5sByProductId = async ({
   return chunkMd5s;
 };
 
+const getOfflineChunkMd5s = async () => {
+  const assetTypeId = (await pool.query(sql`
+    SELECT id
+    FROM asset_types
+    WHERE slug = 'depot-file-chunk';
+  `)).rows[0]['id'];
+
+  const chunkPattern = '/content-system/v2/offline/%';
+
+  const response = await pool.query(sql`
+    SELECT path
+    FROM assets
+    WHERE path LIKE ${chunkPattern}
+    AND asset_type_id = ${assetTypeId}
+    ORDER BY id DESC;
+  `);
+
+  const chunkMd5s = {};
+
+  for (const row of response.rows) {
+    const assetPath = row['path'];
+    const chunkMd5 = assetPath.split('/').slice(-1)[0];
+    chunkMd5s[chunkMd5] = true;
+  }
+
+  return chunkMd5s;
+};
+
 export {
   createAsset,
   getAsset,
@@ -190,4 +218,5 @@ export {
   updateAsset,
   createAssetResponse,
   getChunkMd5sByProductId,
+  getOfflineChunkMd5s,
 };
