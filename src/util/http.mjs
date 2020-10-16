@@ -102,6 +102,7 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
           }
 
           reject(error);
+          return;
         }
 
         try {
