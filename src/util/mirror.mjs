@@ -2,6 +2,7 @@ import path from 'path';
 import zlib from 'zlib';
 import { sleep } from './common.mjs';
 import DownloadQueue from './DownloadQueue.mjs';
+import SecureLinkV1 from '../core/SecureLinkV1.mjs';
 import SecureLinkV2 from '../core/SecureLinkV2.mjs';
 import { GOG_CDN_URL, GOG_IMAGES_URL } from './api.mjs';
 import { downloadAsset, readAsset } from './asset.mjs';
@@ -19,18 +20,58 @@ import * as db from '../db.mjs';
 import { shutdown } from './process.mjs';
 import { createProductFromApiProduct } from './product.mjs';
 
-const mirrorV1Depot = async (manifestPath, _productId) => {
+const mirrorV1Depot = async (manifestPath, productId, build) => {
   if (shutdown.shuttingDown) {
     return;
   }
 
+  const manifestId = manifestPath.split('/').slice(-1)[0].split('.json')[0];
   const manifestUrl = `${GOG_CDN_URL}${manifestPath}`;
   const manifestData = await readAsset({ url: manifestUrl }, env.GROG_DATA_DIR);
   const manifest = JSON.parse(manifestData);
 
-  console.log(manifest);
+  if (manifest.version !== 1) {
+    throw new Error(`Unsupported depot manifest version: ${manifest.version}`);
+  }
 
-  throw 'Unimplemented';
+  const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+
+  const session = await loadSession();
+
+  if (!session) {
+    throw new Error('Session expired');
+  }
+
+  const link = new SecureLinkV1(productId);
+  await link.authenticate(session);
+
+  await saveSession(session);
+
+  // Consider all depot URLs to be hosted on the conventional GOG_CDN_URL hostname
+  const hostname = new URL(GOG_CDN_URL).hostname;
+
+  for (const file of manifest.depot.files) {
+    if (!file.url) {
+      continue;
+    }
+
+    const name = file.url.split('/').slice(1).join('/');
+    const path = `${build.os}/${build.gog_legacy_id}/${name}`;
+
+    const entry = {
+      type: 'depot-file',
+      productId,
+      url: link.getUrl(path),
+      hostname,
+    };
+
+    depotQueue.add(entry);
+  }
+
+  if (depotQueue.length > 0) {
+    console.log(`Syncing V1 depot for owned product; product id: ${productId}; depot manifest: ${manifestId}; depot files: ${manifest.depot.files.length}`);
+    await depotQueue.run();
+  }
 };
 
 const mirrorV2Depot = async (manifestPath, productId) => {
@@ -177,9 +218,29 @@ const mirrorDepots = async (repositoryPaths, ownedProductIds) => {
     const repositoryData = await readAsset({ url: repositoryUrl }, env.GROG_DATA_DIR);
 
     if (repositoryPath.startsWith('/content-system/v1')) {
-      const repository = repositoryData.toString('utf8');
+      const repository = JSON.parse(repositoryData.toString('utf8'));
       const { product: { depots = [], rootGameID } = {} } = repository;
       const rootGameId = rootGameID ? parseInt(rootGameID, 10) : null;
+
+      const buildProductGogId = repository.product.rootGameID;
+      const buildGogLegacyId = repositoryPath.split('/')[6];
+
+      const buildProduct = await db.product.getProduct({
+        gogId: buildProductGogId,
+      });
+
+      if (!buildProduct) {
+        throw new Error(`Missing product: ${buildProductGogId}`);
+      }
+
+      const build = await db.build.getBuild({
+        productId: buildProduct.id,
+        gogLegacyId: buildGogLegacyId,
+      });
+
+      if (!build) {
+        throw new Error(`Missing build: ${buildGogLegacyId}`);
+      }
 
       for (const depot of depots) {
         if (!depot.manifest) {
@@ -197,7 +258,7 @@ const mirrorDepots = async (repositoryPaths, ownedProductIds) => {
 
         const manifestPath = path.resolve(repositoryPath, '../', depot.manifest);
 
-        await mirrorV1Depot(manifestPath, productId);
+        await mirrorV1Depot(manifestPath, productId, build);
       }
     } else if (repositoryPath.startsWith('/content-system/v2')) {
       const repository = JSON.parse(zlib.inflateSync(repositoryData));
