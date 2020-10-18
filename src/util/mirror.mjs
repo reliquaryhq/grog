@@ -20,7 +20,7 @@ import * as db from '../db.mjs';
 import { shutdown } from './process.mjs';
 import { createProductFromApiProduct } from './product.mjs';
 
-const mirrorV1Depot = async (manifestPath, productId, build) => {
+const mirrorGen1Depot = async (manifestPath, productId, build) => {
   if (shutdown.shuttingDown) {
     return;
   }
@@ -69,12 +69,12 @@ const mirrorV1Depot = async (manifestPath, productId, build) => {
   }
 
   if (depotQueue.length > 0) {
-    console.log(`Syncing V1 depot for owned product; product id: ${productId}; depot manifest: ${manifestId}; depot files: ${manifest.depot.files.length}`);
+    console.log(`Syncing gen 1 depot for owned product; product id: ${productId}; depot manifest: ${manifestId}; depot files: ${manifest.depot.files.length}`);
     await depotQueue.run();
   }
 };
 
-const mirrorV2Depot = async (manifestPath, productId) => {
+const mirrorGen2Depot = async (manifestPath, productId) => {
   if (shutdown.shuttingDown) {
     return;
   }
@@ -147,12 +147,12 @@ const mirrorV2Depot = async (manifestPath, productId) => {
   }
 
   if (depotQueue.length > 0) {
-    console.log(`Syncing V2 depot for owned product; product id: ${productId}; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
+    console.log(`Syncing gen 2 depot for owned product; product id: ${productId}; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
     await depotQueue.run();
   }
 };
 
-const mirrorV2OfflineDepot = async (manifestPath, productId) => {
+const mirrorGen2OfflineDepot = async (manifestPath, productId) => {
   if (shutdown.shuttingDown) {
     return;
   }
@@ -211,7 +211,7 @@ const mirrorV2OfflineDepot = async (manifestPath, productId) => {
   }
 
   if (depotQueue.length > 0) {
-    console.log(`Syncing V2 offline depot for owned product; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
+    console.log(`Syncing gen 2 offline depot for owned product; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
     await depotQueue.run();
   }
 };
@@ -260,13 +260,13 @@ const mirrorDepots = async (repositoryPaths, ownedProductIds) => {
         const isOwned = ownedProductIds.includes(productId);
 
         if (!isOwned) {
-          console.log(`Skipping V1 depot for unowned product; product: ${productId}`);
+          console.log(`Skipping gen 1 depot for unowned product; product: ${productId}`);
           continue;
         }
 
         const manifestPath = path.resolve(repositoryPath, '../', depot.manifest);
 
-        await mirrorV1Depot(manifestPath, productId, build);
+        await mirrorGen1Depot(manifestPath, productId, build);
       }
     } else if (repositoryPath.startsWith('/content-system/v2')) {
       const repository = JSON.parse(zlib.inflateSync(repositoryData));
@@ -282,18 +282,18 @@ const mirrorDepots = async (repositoryPaths, ownedProductIds) => {
         const isOwned = ownedProductIds.includes(productId);
 
         if (!isOwned) {
-          console.log(`Skipping V2 depot for unowned product; product: ${productId}`);
+          console.log(`Skipping gen 2 depot for unowned product; product: ${productId}`);
           continue;
         }
 
-        await mirrorV2Depot(manifestPath, productId);
+        await mirrorGen2Depot(manifestPath, productId);
       }
 
       if (offlineDepot && offlineDepot.manifest) {
         const manifestPath = `/content-system/v2/meta/${formatPath22(offlineDepot.manifest)}`;
         const productId = parseInt(offlineDepot.productId, 10);
 
-        await mirrorV2OfflineDepot(manifestPath, productId);
+        await mirrorGen2OfflineDepot(manifestPath, productId);
       }
     }
   }

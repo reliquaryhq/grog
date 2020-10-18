@@ -10,7 +10,7 @@ const getBuilds = (productId, os, generation = 2, version = 2) =>
   .then(handleError)
   .then(getJson);
 
-const getSecureLinkV2 = (productId, path, authorization, generation = 2, version = 2, type = null) =>
+const getSecureLink = (productId, path, authorization, generation = 2, version = 2, type = null) =>
   fetch(
     `${GOG_CS_URL}/products/${productId}/secure_link?${getQuery({ generation, path, type, _version: version })}`,
     { headers: { ...GOG_CS_HEADERS, 'Authorization': authorization } },
@@ -20,5 +20,5 @@ const getSecureLinkV2 = (productId, path, authorization, generation = 2, version
 
 export {
   getBuilds,
-  getSecureLinkV2,
+  getSecureLink,
 };

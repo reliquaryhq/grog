@@ -33,7 +33,7 @@ class SecureLinkV1 {
 
   async authenticate(session) {
     const authorization = await session.getBearer();
-    const link = await api.cs.getSecureLinkV2(this.productId, '/', authorization, 1, 2, 'depot');
+    const link = await api.cs.getSecureLink(this.productId, '/', authorization, 1, 2, 'depot');
 
     const templates = {};
 
