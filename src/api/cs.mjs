@@ -18,7 +18,16 @@ const getSecureLink = (productId, path, authorization, generation = 2, version =
   .then(handleError)
   .then(getJson);
 
+const resolveRedirect = (url) =>
+  fetch(
+    url,
+    { headers: { ...GOG_CS_HEADERS }, redirect: 'manual', follow: 0 },
+  )
+  .then(handleError)
+  .then((response) => response.headers.get('location'));
+
 export {
   getBuilds,
   getSecureLink,
+  resolveRedirect,
 };
