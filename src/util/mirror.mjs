@@ -441,11 +441,37 @@ const mirrorDownloads = async (productId, productData) => {
 
       await saveSession(session);
 
-      const validDownlink = downlinkData['downlink']
-        && new URL(downlinkData['downlink']).pathname !== '/secure'
-        && new URL(downlinkData['downlink']).hostname !== 'content-system.gog.com';
+      if (!downlinkData['downlink']) {
+        return;
+      }
 
-      if (validDownlink) {
+      const downlinkDataUrl = new URL(downlinkData['downlink']);
+      const isRedirect = downlinkDataUrl.hostname === 'content-system.gog.com'
+        && downlinkDataUrl.pathname.endsWith('/website/download');
+      const isFinal = downlinkDataUrl.hostname !== 'content-system.gog.com'
+        && downlinkDataUrl.pathname !== '/secure';
+
+      let finalDownlinkUrl;
+
+      if (isFinal) {
+        finalDownlinkUrl = downlinkDataUrl.href;
+      } else if (isRedirect) {
+        try {
+          finalDownlinkUrl = await api.cs.resolveRedirect(downlinkDataUrl.href);
+
+          // Bad response
+          if (/^https:\/\/cdn-hw\.gog\.com\/securea{0,}\?/.test(finalDownlinkUrl)) {
+            finalDownlinkUrl = null;
+          }
+        } catch (error) {
+          console.error(`Error when resolving downlink redirect: ${error}`);
+          return;
+        }
+
+        await sleep(1000);
+      }
+
+      if (finalDownlinkUrl) {
         const onDownloaded = async ({ asset }) => {
           const existingDownlink = await db.downlink.getDownlink({ productId, downlinkPath });
 
@@ -462,7 +488,7 @@ const mirrorDownloads = async (productId, productData) => {
         const entry = {
           type: assetType,
           productId,
-          url: downlinkData['downlink'],
+          url: finalDownlinkUrl,
           onDownloaded,
         };
 
