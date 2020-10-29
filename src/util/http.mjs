@@ -158,7 +158,7 @@ const getQuery = (attributes) =>
     .join('&');
 
 const handleError = async (response) => {
-  if (response.ok) {
+  if (response.ok || response.status === 301 || response.status === 302) {
     return response;
   }
 
