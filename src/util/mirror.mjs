@@ -403,6 +403,10 @@ const mirrorDownloads = async (productId, productData) => {
   const languagePacks = productDownloads['language_packs'] || [];
 
   const addFile = async (file, assetType) => {
+    if (shutdown.shuttingDown) {
+      return;
+    }
+
     if (file['size'] === 0) {
       return;
     }
