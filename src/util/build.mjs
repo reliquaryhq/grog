@@ -10,10 +10,21 @@ const createBuildsFromApiProductBuilds = async (product, apiProductBuilds) => {
   for (const apiBuildItem of apiBuildItems) {
     const build = await db.build.getBuild({ gogId: apiBuildItem.build_id });
 
-    if (!build) {
-      const repositoryUrl = ((apiBuildItem.urls || [])[0] || {}).url;
-      const repositoryPath = repositoryUrl ? new URL(repositoryUrl).pathname : null;
+    const repositoryUrl = ((apiBuildItem.urls || [])[0] || {}).url;
+    const repositoryPath = repositoryUrl ? new URL(repositoryUrl).pathname : null;
+    const branch = apiBuildItem.branch ? apiBuildItem.branch : null;
 
+    if (build) {
+      const updates = {};
+
+      if (build.branch !== branch) {
+        updates.branch = branch;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await db.build.updateBuild({ id: build.id, ...updates });
+      }
+    } else {
       await db.build.createBuild({
         productId: product.id,
         gogId: apiBuildItem.build_id,
@@ -23,7 +34,7 @@ const createBuildsFromApiProductBuilds = async (product, apiProductBuilds) => {
         generation: apiBuildItem.generation,
         versionName: apiBuildItem.version_name,
         publishedAt: new Date(apiBuildItem.date_published),
-        branch: apiBuildItem.branch ? apiBuildItem.branch : null,
+        branch,
       });
     }
   }
