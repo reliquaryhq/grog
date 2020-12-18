@@ -101,6 +101,99 @@ const getBuild = async ({
   productId,
 }))[0];
 
+const updateBuild = async ({
+  id,
+  productId,
+  gogId,
+  gogLegacyId,
+  repositoryPath,
+  os,
+  generation,
+  versionName,
+  isMirrored,
+  isGogDb,
+  publishedAt,
+  branch,
+}) => {
+  const updates = [];
+
+  if (productId === null) {
+    updates.push(sql`product_id = NULL`);
+  } else if (productId !== undefined) {
+    updates.push(sql`product_id = ${productId}`);
+  }
+
+  if (gogId === null) {
+    updates.push(sql`gog_id = NULL`);
+  } else if (gogId !== undefined) {
+    updates.push(sql`gog_id = ${gogId.toString()}`);
+  }
+
+  if (gogLegacyId === null) {
+    updates.push(sql`gog_legacy_id = NULL`);
+  } else if (gogLegacyId !== undefined) {
+    updates.push(sql`gog_legacy_id = ${gogLegacyId.toString()}`);
+  }
+
+  if (repositoryPath === null) {
+    updates.push(sql`repository_path = NULL`);
+  } else if (repositoryPath !== undefined) {
+    updates.push(sql`repository_path = ${repositoryPath}`);
+  }
+
+  if (os === null) {
+    updates.push(sql`os = NULL`);
+  } else if (os !== undefined) {
+    updates.push(sql`os = ${os}`);
+  }
+
+  if (generation === null) {
+    updates.push(sql`generation = NULL`);
+  } else if (generation !== undefined) {
+    updates.push(sql`generation = ${generation}`);
+  }
+
+  if (versionName === null) {
+    updates.push(sql`version_name = NULL`);
+  } else if (versionName !== undefined) {
+    updates.push(sql`version_name = ${versionName}`);
+  }
+
+  if (isMirrored === null) {
+    updates.push(sql`is_mirrored = NULL`);
+  } else if (isMirrored !== undefined) {
+    updates.push(sql`is_mirrored = ${isMirrored}`);
+  }
+
+  if (isGogDb === null) {
+    updates.push(sql`is_gogdb = NULL`);
+  } else if (isGogDb !== undefined) {
+    updates.push(sql`is_gogdb = ${isGogDb}`);
+  }
+
+  if (publishedAt === null) {
+    updates.push(sql`published_at = NULL`);
+  } else if (publishedAt !== undefined) {
+    updates.push(sql`published_at = ${publishedAt.toISOString()}`);
+  }
+
+  if (branch === null) {
+    updates.push(sql`branch = NULL`);
+  } else if (branch !== undefined) {
+    updates.push(sql`branch = ${branch}`);
+  }
+
+  if (updates.length > 0) {
+    updates.push(sql`updated_at = ${(new Date()).toISOString()}`);
+
+    return pool.query(sql`
+      UPDATE builds
+      SET ${sql.join(updates, sql`, `)}
+      WHERE builds.id = ${id};
+    `);
+  }
+};
+
 const createBuildDepot = async ({
   buildId,
   depotId,
@@ -156,6 +249,7 @@ export {
   createBuild,
   getBuild,
   getBuilds,
+  updateBuild,
   createBuildDepot,
   getBuildDepot,
   getBuildDepots,
