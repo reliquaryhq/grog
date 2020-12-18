@@ -23,6 +23,7 @@ const createBuildsFromApiProductBuilds = async (product, apiProductBuilds) => {
         generation: apiBuildItem.generation,
         versionName: apiBuildItem.version_name,
         publishedAt: new Date(apiBuildItem.date_published),
+        branch: apiBuildItem.branch ? apiBuildItem.branch : null,
       });
     }
   }

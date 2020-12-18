@@ -12,6 +12,7 @@ const createBuild = async ({
   isGogDb = false,
   publishedAt = null,
   createdAt = new Date(),
+  branch = null,
 }) => (await pool.query(sql`
   INSERT INTO builds (
     product_id,
@@ -25,7 +26,8 @@ const createBuild = async ({
     is_gogdb,
     published_at,
     created_at,
-    updated_at
+    updated_at,
+    branch
   ) VALUES (
     ${productId},
     ${gogId.toString()},
@@ -38,7 +40,8 @@ const createBuild = async ({
     ${isGogDb},
     ${publishedAt ? publishedAt.toISOString() : null},
     ${createdAt.toISOString()},
-    ${createdAt.toISOString()}
+    ${createdAt.toISOString()},
+    ${branch}
   ) RETURNING *;
 `)).rows[0];
 

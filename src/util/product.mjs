@@ -185,6 +185,7 @@ const getProductBuilds = async (productId, os = null) => {
       const manifestPath = `/${manifestUrl.split('/').slice(3).join('/')}`;
 
       productBuilds[item.build_id] = {
+        branch: item.branch,
         build_id: item.build_id,
         generation: item.generation,
         version_name: item.version_name,
