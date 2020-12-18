@@ -587,7 +587,7 @@ const mirrorRepositoryManifests = async (productId, buildRepositoryPaths) => {
   }
 };
 
-const mirrorProduct = async (productId, ownedProductIds, includeDepots = false) => {
+const mirrorProduct = async (productId, ownedProductIds, includeDepots = false, password = null) => {
   const productData = await api.product.getProduct(productId);
   const productFetchedAt = new Date();
 
@@ -605,7 +605,7 @@ const mirrorProduct = async (productId, ownedProductIds, includeDepots = false) 
     let buildsData;
 
     try {
-      buildsData = await api.cs.getBuilds(productId, os);
+      buildsData = await api.cs.getBuilds(productId, os, 2, 2, password);
     } catch (error) {
       const { response } = error;
       const details = response ? response.error_description || response.error : '';
