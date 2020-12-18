@@ -2,9 +2,9 @@ import fetch from 'node-fetch';
 import { GOG_CS_HEADERS, GOG_CS_URL } from '../util/api.mjs';
 import { getJson, getQuery, handleError } from '../util/http.mjs';
 
-const getBuilds = (productId, os, generation = 2, version = 2) =>
+const getBuilds = (productId, os, generation = 2, version = 2, password = null) =>
   fetch(
-    `${GOG_CS_URL}/products/${productId}/os/${os}/builds?generation=${generation}&_version=${version}`,
+    `${GOG_CS_URL}/products/${productId}/os/${os}/builds?${getQuery({ generation, _version: version, password })}`,
     { headers: GOG_CS_HEADERS },
   )
   .then(handleError)
