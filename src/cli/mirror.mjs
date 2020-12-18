@@ -76,8 +76,9 @@ const handleMirrorProduct = async (_args, flags) => {
     }
   } else {
     const productId = parseInt(flags['product-id'], 10);
+    const password = flags['password'] || null;
 
-    await mirrorProduct(productId, ownedGames, includeDepots);
+    await mirrorProduct(productId, ownedGames, includeDepots, password);
   }
 };
 
