@@ -617,7 +617,7 @@ const mirrorProduct = async (productId, ownedProductIds, includeDepots = false, 
 
     if (buildsData) {
       const buildsFetchedAt = new Date();
-      const apiProductBuilds = await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt);
+      const apiProductBuilds = await createOrUpdateApiProductBuilds(productId, os, buildsData, buildsFetchedAt, password);
       await createBuildsFromApiProductBuilds(productRecord, apiProductBuilds);
     }
   }

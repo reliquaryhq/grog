@@ -72,28 +72,30 @@ const createOrUpdateApiProduct = async (productId, data, fetchedAt) => {
   }
 };
 
-const createOrUpdateApiProductBuilds = async (productId, os, data, fetchedAt) => {
+const createOrUpdateApiProductBuilds = async (productId, os, data, fetchedAt, password) => {
   const revisionHash = getApiProductBuildsRevisionHash(data);
-  const existingApiProductBuilds = await db.product.getApiProductBuilds({ productId, os });
+  const existingApiProductBuilds = await db.product.getApiProductBuilds({ productId, os, password });
 
   if (existingApiProductBuilds) {
     if (existingApiProductBuilds['revision_hash'] === revisionHash) {
-      console.log(`Updating api product builds revision last seen at; product: ${productId}; os: ${os}; revision: ${existingApiProductBuilds['revision']}`);
+      console.log(`Updating api product builds revision last seen at; product: ${productId}; os: ${os}; password: ${password}; revision: ${existingApiProductBuilds['revision']}`);
 
       await db.product.observeApiProductBuildsRevision({
         productId,
         os,
+        password,
         revision: existingApiProductBuilds['revision'],
         revisionLastSeenAt: fetchedAt,
       });
 
-      return db.product.getApiProductBuilds({ productId, os });
+      return db.product.getApiProductBuilds({ productId, os, password });
     } else {
-      console.log(`Creating new api product builds revision; product: ${productId}; os: ${os}; revision: ${existingApiProductBuilds['revision'] + 1}`);
+      console.log(`Creating new api product builds revision; product: ${productId}; os: ${os}; password: ${password}; revision: ${existingApiProductBuilds['revision'] + 1}`);
 
       return db.product.createApiProductBuildsRevision({
         productId,
         os,
+        password,
         data,
         revision: existingApiProductBuilds['revision'] + 1,
         revisionHash,
@@ -102,11 +104,12 @@ const createOrUpdateApiProductBuilds = async (productId, os, data, fetchedAt) =>
       });
     }
   } else {
-    console.log(`Creating new api product builds; product: ${productId}; os: ${os}`);
+    console.log(`Creating new api product builds; product: ${productId}; os: ${os}; password: ${password}`);
 
     return db.product.createApiProductBuildsRevision({
       productId,
       os,
+      password,
       data,
       revision: 1,
       revisionHash,

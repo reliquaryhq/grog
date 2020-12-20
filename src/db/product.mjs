@@ -83,6 +83,7 @@ const createApiProductRevision = async ({
 const createApiProductBuildsRevision = async ({
   productId,
   os,
+  password,
   data,
   revision,
   revisionHash,
@@ -93,6 +94,7 @@ const createApiProductBuildsRevision = async ({
     INSERT INTO api_product_builds (
       product_id,
       os,
+      password,
       data,
       revision,
       revision_hash,
@@ -101,6 +103,7 @@ const createApiProductBuildsRevision = async ({
     ) VALUES (
       ${productId},
       ${os},
+      ${password},
       ${JSON.stringify(data)},
       ${revision},
       ${revisionHash},
@@ -126,17 +129,20 @@ const getApiProduct = async ({
 const getApiProductBuilds = async ({
   productId,
   os,
+  password,
 }) =>
   (await pool.query(sql`
     SELECT *
     FROM api_product_builds
     WHERE product_id = ${productId}
     AND os = ${os}
+    AND password ${password === null ? sql`IS NULL` : sql`= ${password}`}
     AND revision = (
       SELECT max(revision)
       FROM api_product_builds
       WHERE product_id = ${productId}
       AND os = ${os}
+      AND password ${password === null ? sql`IS NULL` : sql`= ${password}`}
     );
   `)).rows[0];
 
@@ -164,6 +170,7 @@ const observeApiProductRevision = ({
 const observeApiProductBuildsRevision = ({
   productId,
   os,
+  password,
   revision,
   revisionLastSeenAt,
 }) =>
@@ -172,6 +179,7 @@ const observeApiProductBuildsRevision = ({
     SET revision_last_seen_at = ${revisionLastSeenAt.toISOString()}
     WHERE product_id = ${productId}
     AND os = ${os}
+    AND password ${password === null ? sql`IS NULL` : sql`= ${password}`}
     AND revision = ${revision};
   `);
 
