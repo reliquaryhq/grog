@@ -10,6 +10,14 @@ const getBuilds = (productId, os, generation = 2, version = 2, password = null) 
   .then(handleError)
   .then(getJson);
 
+const getPatch = (productId, fromBuildId, toBuildId, version = 4) =>
+  fetch(
+    `${GOG_CS_URL}/products/${productId}/patches?${getQuery({ from_build_id: fromBuildId, to_build_id: toBuildId, _version: version })}`,
+    { headers: GOG_CS_HEADERS },
+  )
+  .then(handleError)
+  .then(getJson);
+
 const getSecureLink = (productId, path, authorization, generation = 2, version = 2, type = null) =>
   fetch(
     `${GOG_CS_URL}/products/${productId}/secure_link?${getQuery({ generation, path, type, _version: version })}`,
@@ -28,6 +36,7 @@ const resolveRedirect = (url) =>
 
 export {
   getBuilds,
+  getPatch,
   getSecureLink,
   resolveRedirect,
 };
