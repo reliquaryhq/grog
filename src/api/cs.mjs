@@ -18,9 +18,9 @@ const getPatch = (productId, fromBuildId, toBuildId, version = 4) =>
   .then(handleError)
   .then(getJson);
 
-const getSecureLink = (productId, path, authorization, generation = 2, version = 2, type = null) =>
+const getSecureLink = (productId, path, authorization, generation = 2, version = 2, type = null, root = null) =>
   fetch(
-    `${GOG_CS_URL}/products/${productId}/secure_link?${getQuery({ generation, path, type, _version: version })}`,
+    `${GOG_CS_URL}/products/${productId}/secure_link?${getQuery({ generation, path, type, root, _version: version })}`,
     { headers: { ...GOG_CS_HEADERS, 'Authorization': authorization } },
   )
   .then(handleError)
