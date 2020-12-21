@@ -2,8 +2,9 @@ import * as api from '../api.mjs';
 import { formatString } from '../util/string.mjs';
 
 class SecureLinkV2 {
-  constructor(productId) {
+  constructor(productId, root = null) {
     this.productId = productId;
+    this.root = root;
     this.templates = {};
   }
 
@@ -37,7 +38,7 @@ class SecureLinkV2 {
 
   async authenticate(session) {
     const authorization = await session.getBearer();
-    const link = await api.cs.getSecureLink(this.productId, '/', authorization, 2, 2);
+    const link = await api.cs.getSecureLink(this.productId, '/', authorization, 2, 2, null, this.root);
 
     const templates = {};
 
