@@ -119,6 +119,61 @@ const createOrUpdateApiProductBuilds = async (productId, os, data, fetchedAt, pa
   }
 };
 
+const createOrUpdateApiProductPatch = async (product, fromBuild, toBuild, data, fetchedAt) => {
+  const revisionHash = getApiProductPatchRevisionHash(data);
+  const existingApiProductPatch = await db.product.getApiProductPatch({
+    productId: product.id,
+    fromBuildId: fromBuild.id,
+    toBuildId: toBuild.id,
+  });
+
+  if (existingApiProductPatch) {
+    if (existingApiProductPatch['revision_hash'] === revisionHash) {
+      console.log(`Updating api product patch revision last seen at; product: ${product.gog_id}; from build: ${fromBuild.gog_id}; to build: ${toBuild.gog_id}; revision: ${existingApiProductPatch.revision}`);
+
+      await db.product.observeApiProductPatchRevision({
+        productId: product.id,
+        fromBuildId: fromBuild.id,
+        toBuildId: toBuild.id,
+        revision: existingApiProductPatch.revision,
+        revisionLastSeenAt: fetchedAt,
+      });
+
+      return db.product.getApiProductPatch({
+        productId: product.id,
+        fromBuildId: fromBuild.id,
+        toBuildId: toBuild.id,
+      });
+    } else {
+      console.log(`Creating new api product patch revision; product: ${product.gog_id}; from build: ${fromBuild.gog_id}; to build: ${toBuild.gog_id}; revision: ${existingApiProductPatch.revision + 1}`);
+
+      return db.product.createApiProductPatchRevision({
+        productId: product.id,
+        fromBuildId: fromBuild.id,
+        toBuildId: toBuild.id,
+        data,
+        revision: existingApiProductPatch.revision + 1,
+        revisionHash,
+        revisionFirstSeenAt: fetchedAt,
+        revisionLastSeenAt: fetchedAt,
+      });
+    }
+  } else {
+    console.log(`Creating new api product patch; product: ${product.gog_id}; from build: ${fromBuild.gog_id}; to build: ${toBuild.gog_id}; revision: 1`);
+
+    return db.product.createApiProductPatchRevision({
+      productId: product.id,
+      fromBuildId: fromBuild.id,
+      toBuildId: toBuild.id,
+      data,
+      revision: 1,
+      revisionHash,
+      revisionFirstSeenAt: fetchedAt,
+      revisionLastSeenAt: fetchedAt,
+    });
+  }
+};
+
 const normalizeApiProduct = (product) => {
   const normalized = sortObject(product);
 
@@ -171,6 +226,10 @@ const normalizeApiProductBuilds = (builds) => {
 
 const getApiProductBuildsRevisionHash = (builds) => {
   return hashObject(normalizeApiProductBuilds(builds));
+};
+
+const getApiProductPatchRevisionHash = (patch) => {
+  return hashObject(sortObject(patch));
 };
 
 const getProductBuilds = async (productId, os = null) => {
@@ -323,6 +382,7 @@ export {
   createProductFromApiProduct,
   createOrUpdateApiProduct,
   createOrUpdateApiProductBuilds,
+  createOrUpdateApiProductPatch,
   getProductBuilds,
   installProduct,
 };
