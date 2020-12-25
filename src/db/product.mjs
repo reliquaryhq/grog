@@ -112,6 +112,38 @@ const createApiProductBuildsRevision = async ({
     ) RETURNING *;
   `)).rows[0];
 
+const createApiProductPatchRevision = async ({
+  productId,
+  fromBuildId,
+  toBuildId,
+  data,
+  revision,
+  revisionHash,
+  revisionFirstSeenAt,
+  revisionLastSeenAt,
+}) =>
+  (await pool.query(sql`
+    INSERT INTO api_product_patches (
+      product_id,
+      from_build_id,
+      to_build_id,
+      data,
+      revision,
+      revision_hash,
+      revision_first_seen_at,
+      revision_last_seen_at
+    ) VALUES (
+      ${productId},
+      ${fromBuildId},
+      ${toBuildId},
+      ${JSON.stringify(data)},
+      ${revision},
+      ${revisionHash},
+      ${revisionFirstSeenAt.toISOString()},
+      ${revisionLastSeenAt.toISOString()}
+    ) RETURNING *;
+  `)).rows[0];
+
 const getApiProduct = async ({
   productId,
 }) =>
@@ -143,6 +175,26 @@ const getApiProductBuilds = async ({
       WHERE product_id = ${productId}
       AND os = ${os}
       AND password ${password === null ? sql`IS NULL` : sql`= ${password}`}
+    );
+  `)).rows[0];
+
+const getApiProductPatch = async ({
+  productId,
+  fromBuildId,
+  toBuildId,
+}) =>
+  (await pool.query(sql`
+    SELECT *
+    FROM api_product_patches
+    WHERE product_id = ${productId}
+    AND from_build_id = ${fromBuildId}
+    AND to_build_id = ${toBuildId}
+    AND revision = (
+      SELECT max(revision)
+      FROM api_product_patches
+      WHERE product_id = ${productId}
+      AND from_build_id = ${fromBuildId}
+      AND to_build_id = ${toBuildId}
     );
   `)).rows[0];
 
@@ -183,14 +235,33 @@ const observeApiProductBuildsRevision = ({
     AND revision = ${revision};
   `);
 
+const observeApiProductPatchRevision = ({
+  productId,
+  fromBuildId,
+  toBuildId,
+  revision,
+  revisionLastSeenAt,
+}) =>
+  pool.query(sql`
+    UPDATE api_product_patches
+    SET revision_last_seen_at = ${revisionLastSeenAt.toISOString()}
+    WHERE product_id = ${productId}
+    AND from_build_id = ${fromBuildId}
+    AND to_build_id = ${toBuildId}
+    AND revision = ${revision};
+  `);
+
 export {
   createProduct,
   getProduct,
   createApiProductRevision,
   createApiProductBuildsRevision,
+  createApiProductPatchRevision,
   getApiProduct,
   getApiProductBuilds,
+  getApiProductPatch,
   getAllApiProductBuilds,
   observeApiProductRevision,
   observeApiProductBuildsRevision,
+  observeApiProductPatchRevision,
 };
