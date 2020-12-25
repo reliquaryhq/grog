@@ -11,8 +11,16 @@ import {
   syncBuildRepositoryGen1,
   syncBuildRepositoryGen2,
 } from './build.mjs';
+import {
+  createPatchFromApiProductPatch,
+  getPatchableBuilds,
+} from   './patch.mjs';
 import { env } from './process.mjs';
-import { createOrUpdateApiProduct, createOrUpdateApiProductBuilds } from './product.mjs';
+import {
+  createOrUpdateApiProduct,
+  createOrUpdateApiProductBuilds,
+  createOrUpdateApiProductPatch,
+} from './product.mjs';
 import { loadSession, saveSession } from './session.mjs';
 import { formatPath22 } from './string.mjs';
 import * as api from '../api.mjs';
@@ -587,7 +595,201 @@ const mirrorRepositoryManifests = async (productId, buildRepositoryPaths) => {
   }
 };
 
-const mirrorProduct = async (productId, ownedProductIds, includeDepots = false, password = null) => {
+const mirrorPatches = async (product, builds) => {
+  if (shutdown.shuttingDown) {
+    return;
+  }
+
+  const patchableBuilds = getPatchableBuilds(builds);
+
+  for (const os of Object.keys(patchableBuilds)) {
+    for (const branchBuilds of Object.values(patchableBuilds[os])) {
+      for (let i = 0; i < branchBuilds.length - 1; i++) {
+        if (shutdown.shuttingDown) {
+          return;
+        }
+
+        const fromBuild = branchBuilds[i];
+        const toBuild = branchBuilds[i + 1];
+
+        const currentRevision = await db.product.getApiProductPatch({
+          productId: product.id,
+          fromBuildId: fromBuild.id,
+          toBuildId: toBuild.id,
+        });
+
+        // Limit fetching to once per 7 days
+        if (currentRevision && Date.now() - currentRevision.revision_last_seen_at < (7 * 24 * 60 * 60 * 1000)) {
+          continue;
+        }
+
+        let patchData;
+        try {
+          patchData = await api.cs.getPatch(product.gog_id, fromBuild.gog_id, toBuild.gog_id);
+        } catch (error) {
+          const { response } = error;
+          const details = response ? response.error_description || response.error : '';
+          console.error(`Failed to find patch data; from build: ${fromBuild.gog_id}; to build: ${toBuild.gog_id}; ${details}`);
+
+          await sleep(1500);
+          continue;
+        }
+
+        if (patchData) {
+          const patchFetchedAt = new Date();
+          const apiProductPatch = await createOrUpdateApiProductPatch(product, fromBuild, toBuild, patchData, patchFetchedAt);
+          await createPatchFromApiProductPatch(product, apiProductPatch);
+        }
+
+        await sleep(1500);
+      }
+    }
+  }
+
+  const patches = await db.patch.getPatches({ productId: product.id });
+  const patchRepositoryPaths = patches.map((patch) => patch.repository_path);
+  const patchRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+
+  for (const path of patchRepositoryPaths) {
+    const url = `${GOG_CDN_URL}${path}`;
+
+    const entry = {
+      url,
+      productId: parseInt(product.gog_id, 10),
+      type: 'repository-manifest',
+    };
+
+    if (path.includes('content-system/v2/patches/meta')) {
+      const md5 = path.split('/').slice(-1)[0];
+
+      entry.hash = {
+        algorithm: 'md5',
+        encoding: 'hex',
+        value: md5,
+      };
+    }
+
+    patchRepositoryQueue.add(entry);
+  }
+
+  if (patchRepositoryQueue.length > 0) {
+    console.log('Syncing patch repositories');
+    await patchRepositoryQueue.run();
+  }
+
+  const patchDepotManifestQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+
+  for (const patch of patches) {
+    const repositoryUrl = `${GOG_CDN_URL}${patch.repository_path}`;
+    const repositoryData = await readAsset({ url: repositoryUrl }, env.GROG_DATA_DIR);
+    const repository = JSON.parse(zlib.inflateSync(repositoryData));
+
+    for (const depot of repository.depots || []) {
+      if (!depot.manifest) {
+        continue;
+      }
+
+      const manifestPath = `/content-system/v2/patches/meta/${formatPath22(depot.manifest)}`;
+
+      const entry = {
+        type: 'depot-manifest',
+        productId: parseInt(depot.productId, 10),
+        url: `${GOG_CDN_URL}${manifestPath}`,
+        hash: {
+          algorithm: 'md5',
+          encoding: 'hex',
+          value: depot.manifest,
+        },
+      };
+
+      patchDepotManifestQueue.add(entry);
+    }
+  }
+
+  if (patchDepotManifestQueue.length > 0) {
+    console.log('Syncing patch depot manifests');
+    await patchDepotManifestQueue.run();
+  }
+
+  const mirroredDepotDiffChunkMd5s = await db.asset.getDepotDiffChunkMd5sByProductId({
+    productId: product.gog_id,
+  });
+  const patchDepotDiffChunkQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+
+  const session = await loadSession();
+  if (!session) {
+    throw new Error('Session expired');
+  }
+
+  const link = new SecureLinkV2(parseInt(product.gog_id, 10), '/patches/store');
+  await link.authenticate(session);
+  await saveSession(session);
+
+  const addDepotDiffChunk = (chunk) => {
+    if (mirroredDepotDiffChunkMd5s[chunk.compressedMd5]) {
+      return;
+    }
+
+    // Consider all chunk URLs to be hosted on the conventional GOG_CDN_URL hostname
+    const hostname = new URL(GOG_CDN_URL).hostname;
+
+    const path = formatPath22(chunk.compressedMd5);
+
+    const entry = {
+      type: 'depot-diff-chunk',
+      productId: parseInt(product.gog_id, 10),
+      url: link.getUrl(path),
+      hostname,
+      size: chunk.compressedSize,
+      hash: {
+        algorithm: 'md5',
+        encoding: 'hex',
+        value: chunk.compressedMd5,
+      },
+    };
+
+    patchDepotDiffChunkQueue.add(entry);
+  };
+
+  for (const patch of patches) {
+    const repositoryUrl = `${GOG_CDN_URL}${patch.repository_path}`;
+    const repositoryData = await readAsset({ url: repositoryUrl }, env.GROG_DATA_DIR);
+    const repository = JSON.parse(zlib.inflateSync(repositoryData));
+
+    for (const depot of repository.depots || []) {
+      if (!depot.manifest) {
+        continue;
+      }
+
+      const manifestPath = `/content-system/v2/patches/meta/${formatPath22(depot.manifest)}`;
+      const manifestUrl = `${GOG_CDN_URL}${manifestPath}`;
+      const manifestData = await readAsset({ url: manifestUrl }, env.GROG_DATA_DIR);
+      const manifest = JSON.parse(zlib.inflateSync(manifestData));
+
+      if (!manifest.depot) {
+        continue;
+      }
+
+      for (const item of manifest.depot.items || []) {
+        if (item.type !== 'DepotDiff') {
+          console.log(item);
+          continue;
+        }
+
+        for (const chunk of item.chunks) {
+          addDepotDiffChunk(chunk);
+        }
+      }
+    }
+  }
+
+  if (patchDepotDiffChunkQueue.length > 0) {
+    console.log('Syncing patch depot diff chunks');
+    await patchDepotDiffChunkQueue.run();
+  }
+};
+
+const mirrorProduct = async (productId, ownedProductIds, includeDepots = false, includePatches = false, password = null) => {
   const productData = await api.product.getProduct(productId);
   const productFetchedAt = new Date();
 
@@ -636,6 +838,10 @@ const mirrorProduct = async (productId, ownedProductIds, includeDepots = false, 
 
     if (includeDepots) {
       await mirrorDepots(buildRepositoryPaths, ownedProductIds);
+    }
+
+    if (includePatches) {
+      await mirrorPatches(productRecord, productBuilds);
     }
   }
 };

@@ -19,6 +19,7 @@ const handleMirrorProduct = async (_args, flags) => {
   }
 
   const includeDepots = flags['include-depots'] || false;
+  const includePatches = flags['include-patches'] || false;
 
   if (flags['all']) {
     const skipOwned = flags['skip-owned'];
@@ -35,7 +36,7 @@ const handleMirrorProduct = async (_args, flags) => {
         }
 
         try {
-          await mirrorProduct(productId, ownedGames, includeDepots);
+          await mirrorProduct(productId, ownedGames, includeDepots, includePatches);
         } catch (error) {
           console.error(error);
         }
@@ -66,7 +67,7 @@ const handleMirrorProduct = async (_args, flags) => {
         }
 
         try {
-          await mirrorProduct(product.id, ownedGames, includeDepots);
+          await mirrorProduct(product.id, ownedGames, includeDepots, includePatches);
         } catch (error) {
           console.error(error);
         }
@@ -78,7 +79,7 @@ const handleMirrorProduct = async (_args, flags) => {
     const productId = parseInt(flags['product-id'], 10);
     const password = flags['password'] || null;
 
-    await mirrorProduct(productId, ownedGames, includeDepots, password);
+    await mirrorProduct(productId, ownedGames, includeDepots, includePatches, password);
   }
 };
 
