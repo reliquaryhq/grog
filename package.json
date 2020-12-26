@@ -30,7 +30,7 @@
     "globby": "10.0.1",
     "lodash": "4.17.20",
     "minimist": "1.2.0",
-    "node-fetch": "2.6.0",
+    "node-fetch": "2.6.1",
     "progress": "2.0.3",
     "slonik": "19.2.0"
   }
