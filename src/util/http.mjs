@@ -76,6 +76,10 @@ const downloadFile = (agent, url, path, { verify, onHeaders, onProgress }) => {
           return;
         }
 
+        if (!fs.existsSync(path)) {
+          console.error(`File unavailable in finish event: ${path}`);
+        }
+
         const { size } = fs.statSync(path);
         const hashValue = hash ? hash.read() : null;
 
