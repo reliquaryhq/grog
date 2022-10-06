@@ -5,12 +5,13 @@ import { formatBytes, formatFixedWidthString } from './string.mjs';
 import { sleep } from './common.mjs';
 
 class DownloadQueue {
-  constructor(rootDir, handleDownload, delay = 0) {
+  constructor(rootDir, handleDownload, delay = 0, concurrency = 1) {
     this.rootDir = rootDir;
     this.handleDownload = handleDownload;
     this.delay = delay;
     this.entries = {};
     this.totalSize = 0;
+    this.concurrency = concurrency;
   }
 
   get length() {
@@ -31,32 +32,40 @@ class DownloadQueue {
 
   async run() {
     const entries = Object.values(this.entries);
-    const agent = new https.Agent({ keepAlive: true, keepAliveMsecs: 10000, maxSockets: 1 });
+    const agent = new https.Agent({ keepAlive: true, maxSockets: this.concurrency });
     let downloadedSize = 0;
 
     const progress = new Progress(
-      'Downloading  :name  [:bar]  :etas  :current/:total entries  :downloadedSize/:totalSize',
+      'Downloading  :item  [:bar]  :etas  :current/:total entries  :downloadedSize/:totalSize',
       {
         width: 70,
         total: entries.length,
         downloadedSize: formatBytes(downloadedSize),
         totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString('', 50, 'right'),
+        item: formatFixedWidthString('', 50, 'right'),
       },
     );
 
-    for (const entry of entries) {
+    const updateProgress = (tick, item) => {
+      const formattedItem = this.concurrency === 1
+        ? formatFixedWidthString(item, 50, 'right')
+        : formatFixedWidthString(`${this.concurrency} urls at a time`, 50, 'left');
+
+      progress.tick(tick, {
+        downloadedSize: formatBytes(downloadedSize),
+        totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
+        item: formattedItem,
+      });
+    };
+
+    const downloadEntry = async (entry) => {
       if (shutdown.shuttingDown) {
-        break;
+        return;
       }
 
       const url = new URL(entry.url);
 
-      progress.tick(0, {
-        downloadedSize: formatBytes(downloadedSize),
-        totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(url.pathname, 50, 'right'),
-      });
+      updateProgress(0, url.pathname);
 
       const onHeaders = (headers) => {
         if (!entry.size) {
@@ -66,12 +75,7 @@ class DownloadQueue {
 
       const onProgress = (bytes) => {
         downloadedSize += bytes;
-
-        progress.tick(0, {
-          downloadedSize: formatBytes(downloadedSize),
-          totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-          name: formatFixedWidthString(url.pathname, 50, 'right'),
-        });
+        updateProgress(0, url.pathname);
       };
 
       let download;
@@ -85,25 +89,40 @@ class DownloadQueue {
           onProgress,
         );
       } catch (error) {
-        progress.interrupt(`Error when handling entry: ${error}; url: ${entry.url}`);
+        progress.interrupt(`Error when handling download for entry: ${error}; url: ${entry.url}`);
         await sleep(this.delay);
-        continue;
+        return;
       }
 
       if (entry.onDownloaded) {
-        await entry.onDownloaded(download);
+        try {
+          await entry.onDownloaded(download);
+        } catch (error) {
+          progress.interrupt(`Error when executing download callback for entry: ${error}; url: ${entry.url}`);
+          await sleep(this.delay);
+          return;
+        }
       }
 
-      progress.tick(1, {
-        downloadedSize: formatBytes(downloadedSize),
-        totalSize: this.totalSize > 0 ? formatBytes(this.totalSize) : '?',
-        name: formatFixedWidthString(url.pathname, 50, 'right'),
-      });
+      updateProgress(1, url.pathname);
 
       if (!download.alreadyDownloaded && this.delay > 0) {
         await sleep(this.delay);
       }
+    };
+
+    for (let i = 0; i < entries.length; i += this.concurrency) {
+      const chunk = entries.slice(i, i + this.concurrency);
+
+      if (shutdown.shuttingDown) {
+        break;
+      }
+
+      const promises = chunk.map((entry) => downloadEntry(entry));
+      await Promise.allSettled(promises);
     }
+
+    agent.destroy();
   }
 }
 
