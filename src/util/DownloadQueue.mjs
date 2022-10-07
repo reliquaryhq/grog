@@ -33,8 +33,9 @@ class DownloadQueue {
 
   async run() {
     const entries = Object.values(this.entries);
-    const agent = new https.Agent({ keepAlive: true, maxSockets: this.concurrency });
-    const limiter = pLimit(this.concurrency);
+    const concurrency = Math.min(entries.length, this.concurrency);
+    const agent = new https.Agent({ keepAlive: true, maxSockets: concurrency + 1 });
+    const limiter = pLimit(concurrency);
     let downloadedSize = 0;
 
     const progress = new Progress(
@@ -49,9 +50,9 @@ class DownloadQueue {
     );
 
     const updateProgress = (tick, item) => {
-      const formattedItem = this.concurrency === 1
+      const formattedItem = concurrency === 1
         ? formatFixedWidthString(item, 50, 'right')
-        : formatFixedWidthString(`${this.concurrency} urls at a time`, 50, 'left');
+        : formatFixedWidthString(`${concurrency} urls at a time`, 50, 'left');
 
       progress.tick(tick, {
         downloadedSize: formatBytes(downloadedSize),
