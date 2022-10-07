@@ -1,5 +1,6 @@
 import https from 'https';
 import Progress from 'progress';
+import pLimit from 'p-limit';
 import { shutdown } from './process.mjs';
 import { formatBytes, formatFixedWidthString } from './string.mjs';
 import { sleep } from './common.mjs';
@@ -33,6 +34,7 @@ class DownloadQueue {
   async run() {
     const entries = Object.values(this.entries);
     const agent = new https.Agent({ keepAlive: true, maxSockets: this.concurrency });
+    const limiter = pLimit(this.concurrency);
     let downloadedSize = 0;
 
     const progress = new Progress(
@@ -106,21 +108,17 @@ class DownloadQueue {
 
       updateProgress(1, url.pathname);
 
+      if (shutdown.shuttingDown) {
+        return;
+      }
+
       if (!download.alreadyDownloaded && this.delay > 0) {
         await sleep(this.delay);
       }
     };
 
-    for (let i = 0; i < entries.length; i += this.concurrency) {
-      const chunk = entries.slice(i, i + this.concurrency);
-
-      if (shutdown.shuttingDown) {
-        break;
-      }
-
-      const promises = chunk.map((entry) => downloadEntry(entry));
-      await Promise.allSettled(promises);
-    }
+    const promises = entries.map((entry) => limiter(() => downloadEntry(entry)));
+    await Promise.allSettled(promises);
 
     agent.destroy();
   }
