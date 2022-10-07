@@ -65,11 +65,17 @@ const mirrorGen1Depot = async (manifestPath, productId, build) => {
 
     const name = file.url.split('/').slice(1).join('/');
     const path = `${build.os}/${build.gog_legacy_id}/${name}`;
+    const url = link.getUrl(path);
+
+    const existingAsset = await db.asset.getAsset({ host: hostname, path: new URL(url).pathname });
+    if (existingAsset && existingAsset.is_downloaded) {
+      continue;
+    }
 
     const entry = {
       type: 'depot-file',
       productId,
-      url: link.getUrl(path),
+      url,
       hostname,
     };
 
