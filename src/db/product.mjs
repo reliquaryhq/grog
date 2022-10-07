@@ -48,6 +48,36 @@ const getProduct = async ({
   throw new Error('id or gogId is required');
 };
 
+const updateProduct = async ({
+  title,
+  slug,
+  id,
+}) => {
+  const updates = [];
+
+  if (title === null) {
+    updates.push(sql`title = NULL`);
+  } else if (title !== undefined) {
+    updates.push(sql`title = ${title}`);
+  }
+
+  if (slug === null) {
+    updates.push(sql`slug = NULL`);
+  } else if (slug !== undefined) {
+    updates.push(sql`slug = ${slug}`);
+  }
+
+  if (updates.length > 0) {
+    updates.push(sql`updated_at = ${(new Date()).toISOString()}`);
+
+    return pool.query(sql`
+      UPDATE products
+      SET ${sql.join(updates, sql`, `)}
+      WHERE products.id = ${id};
+    `);
+  }
+};
+
 const createApiProductRevision = async ({
   productId,
   title,
@@ -254,6 +284,7 @@ const observeApiProductPatchRevision = ({
 export {
   createProduct,
   getProduct,
+  updateProduct,
   createApiProductRevision,
   createApiProductBuildsRevision,
   createApiProductPatchRevision,

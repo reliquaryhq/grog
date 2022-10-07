@@ -16,13 +16,27 @@ const createProductFromApiProduct = async (apiProduct) => {
 
   let productRecord = await db.product.getProduct({ gogId: apiProduct.data.id });
 
-  if (!productRecord) {
-    productRecord = await db.product.createProduct({
-      gogId: apiProduct.data.id,
-      title: apiProduct.data.title,
-      slug: apiProduct.data.slug,
-    });
+  if (productRecord) {
+    const updates = {};
+
+    if (!productRecord.title && apiProduct.title) {
+      updates.title = apiProduct.title;
+    }
+
+    if (!productRecord.slug && apiProduct.slug) {
+      updates.slug = apiProduct.slug;
+    }
+
+    await db.product.updateProduct({ ...updates, id: productRecord.id });
+
+    return await db.product.getProduct({ id: productRecord.id });
   }
+
+  productRecord = await db.product.createProduct({
+    gogId: apiProduct.data.id,
+    title: apiProduct.data.title,
+    slug: apiProduct.data.slug,
+  });
 
   return productRecord;
 };
