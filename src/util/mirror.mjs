@@ -105,7 +105,7 @@ const mirrorGen2Depot = async (manifestPath, productId) => {
 
   const manifestId = manifestPath.split('/').slice(-1)[0];
 
-  const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+  const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0, 4);
 
   const session = await loadSession();
 
