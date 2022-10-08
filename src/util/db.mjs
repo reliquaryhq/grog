@@ -1,4 +1,4 @@
-import globby from 'globby';
+import { globby } from 'globby';
 import path from 'path';
 import slonik from 'slonik';
 import { SCHEMA_DIR } from './fs.mjs';

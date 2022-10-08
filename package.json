@@ -27,7 +27,7 @@
   "dependencies": {
     "dotenv": "8.2.0",
     "fs-extra": "10.1.0",
-    "globby": "11.1.0",
+    "globby": "13.1.2",
     "lodash": "4.17.21",
     "minimist": "1.2.5",
     "node-fetch": "2.6.7",
