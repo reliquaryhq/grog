@@ -34,7 +34,7 @@ class DownloadQueue {
   async run() {
     const entries = Object.values(this.entries);
     const concurrency = Math.min(entries.length, this.concurrency);
-    const agent = new https.Agent({ keepAlive: true, maxSockets: concurrency + 1 });
+    const agent = new https.Agent({ keepAlive: true, maxSockets: concurrency + 1, timeout: 10_000 });
     const limiter = pLimit(concurrency);
     let downloadedSize = 0;
 
