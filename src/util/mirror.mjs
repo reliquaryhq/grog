@@ -534,6 +534,10 @@ const mirrorDownloads = async (productId, productData) => {
 };
 
 const mirrorProductImages = async (productId, productData) => {
+  if (shutdown.shuttingDown) {
+    return;
+  }
+
   const imageQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
 
   for (const rawUrl of Object.values(productData.images)) {
@@ -571,6 +575,10 @@ const mirrorProductImages = async (productId, productData) => {
 };
 
 const mirrorRepositoryManifests = async (productId, buildRepositoryPaths) => {
+  if (shutdown.shuttingDown) {
+    return;
+  }
+
   const buildRepositoryQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
 
   for (const path of buildRepositoryPaths) {
