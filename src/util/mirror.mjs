@@ -105,7 +105,7 @@ const mirrorGen2Depot = async (manifestPath, productId) => {
 
   const manifestId = manifestPath.split('/').slice(-1)[0];
 
-  const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0, 4);
+  const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0, 3);
 
   const session = await loadSession();
 
@@ -318,7 +318,7 @@ const mirrorDepotManifests = async (repositoryPaths) => {
     return;
   }
 
-  const depotManifestQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+  const depotManifestQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0, 2);
 
   for (const repositoryPath of repositoryPaths) {
     const repositoryUrl = `${GOG_CDN_URL}${repositoryPath}`;
