@@ -728,7 +728,7 @@ const mirrorPatches = async (product, builds) => {
   const mirroredDepotDiffChunkMd5s = await db.asset.getDepotDiffChunkMd5sByProductId({
     productId: product.gog_id,
   });
-  const patchDepotDiffChunkQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0);
+  const patchDepotDiffChunkQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0, 3);
 
   const session = await loadSession();
   if (!session) {
