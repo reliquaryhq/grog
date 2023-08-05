@@ -101,9 +101,20 @@ const mirrorGen2Depot = async (manifestPath, productId) => {
     throw new Error(`Unsupported depot manifest version: ${manifest.version}`);
   }
 
-  const mirroredChunkMd5s = await db.asset.getChunkMd5sByProductId({ productId });
-
   const manifestId = manifestPath.split('/').slice(-1)[0];
+
+  const product = await db.product.getProduct({
+    gogId: productId,
+  });
+
+  const depot = await db.depot.getDepot({
+    productId: product.id,
+    manifest: manifestId,
+  });
+
+  if (depot.is_mirrored) {
+    return;
+  }
 
   const depotQueue = new DownloadQueue(env.GROG_DATA_DIR, downloadAsset, 0, 3);
 
@@ -122,10 +133,6 @@ const mirrorGen2Depot = async (manifestPath, productId) => {
   const hostname = new URL(GOG_CDN_URL).hostname;
 
   const addChunk = (chunk) => {
-    if (mirroredChunkMd5s[chunk.compressedMd5]) {
-      return;
-    }
-
     const path = formatPath22(chunk.compressedMd5);
 
     const entry = {
@@ -162,7 +169,14 @@ const mirrorGen2Depot = async (manifestPath, productId) => {
 
   if (depotQueue.length > 0) {
     console.log(`Syncing gen 2 depot for owned product; product id: ${productId}; depot manifest: ${manifestId}; depot items: ${manifest.depot.items.length}`);
-    await depotQueue.run();
+    const queueResult = await depotQueue.run();
+
+    if (queueResult.isSuccessful) {
+      await db.depot.updateDepot({
+        id: depot.id,
+        isMirrored: true,
+      });
+    }
   }
 };
 

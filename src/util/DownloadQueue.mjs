@@ -37,6 +37,7 @@ class DownloadQueue {
     const agent = new https.Agent({ keepAlive: true, maxSockets: concurrency + 1, timeout: 10_000 });
     const limiter = pLimit(concurrency);
     let downloadedSize = 0;
+    let successfulDownloads = 0;
 
     const progress = new Progress(
       'Downloading  :item  [:bar]  :etas  :current/:total entries  :downloadedSize/:totalSize',
@@ -107,6 +108,10 @@ class DownloadQueue {
         }
       }
 
+      if (download.isSuccessful) {
+        successfulDownloads++;
+      }
+
       updateProgress(1, url.pathname);
 
       if (shutdown.shuttingDown) {
@@ -122,6 +127,10 @@ class DownloadQueue {
     await Promise.allSettled(promises);
 
     agent.destroy();
+
+    return {
+      isSuccessful: successfulDownloads === entries.length,
+    };
   }
 }
 

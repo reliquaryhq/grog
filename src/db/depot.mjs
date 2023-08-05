@@ -86,8 +86,32 @@ const getDepot = async ({
   manifest,
 }))[0];
 
+const updateDepot = async ({
+  id,
+  isMirrored,
+}) => {
+  const updates = [];
+
+  if (isMirrored === null) {
+    updates.push(sql`is_mirrored = NULL`);
+  } else if (isMirrored !== undefined) {
+    updates.push(sql`is_mirrored = ${isMirrored}`);
+  }
+
+  if (updates.length > 0) {
+    updates.push(sql`updated_at = ${(new Date()).toISOString()}`);
+
+    return pool.query(sql`
+      UPDATE depots
+      SET ${sql.join(updates, sql`, `)}
+      WHERE depots.id = ${id};
+    `);
+  }
+};
+
 export {
   createDepot,
   getDepot,
   getDepots,
+  updateDepot,
 };

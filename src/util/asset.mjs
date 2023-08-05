@@ -43,6 +43,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
 
     return {
       alreadyDownloaded: true,
+      isSuccessful: asset.isSynced,
       asset,
     };
   }
@@ -74,6 +75,7 @@ const downloadAsset = async (entry, rootDir, agent, onHeaders, onProgress) => {
 
   return {
     alreadyDownloaded: false,
+    isSuccessful: asset.isSynced,
     asset,
   };
 };
@@ -154,7 +156,10 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
       ...updates,
     });
 
-    return { id: asset['id'] };
+    return {
+      id: asset['id'],
+      isSynced: !canVerify || !!(updates.isVerified || asset['is_verified']),
+    };
   }
 
   const hash = known.hash || await getAssetHash(
@@ -193,6 +198,7 @@ const syncAsset = async (entry, downloadPath, known = {}) => {
 
   return {
     id: result.rows[0]['id'],
+    isSynced: !canVerify || isVerified,
   };
 };
 
