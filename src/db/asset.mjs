@@ -241,6 +241,28 @@ const getOfflineChunkMd5s = async () => {
   return chunkMd5s;
 };
 
+const getPathsByPrefix = async ({
+  prefix,
+}) => {
+  const pathPattern = `${prefix}%`;
+
+  const response = await pool.query(sql`
+    SELECT path
+    FROM assets
+    WHERE path LIKE ${pathPattern}
+    ORDER BY id DESC;
+  `);
+
+  const assetPaths = {};
+
+  for (const row of response.rows) {
+    const assetPath = row['path'];
+    assetPaths[assetPath] = true;
+  }
+
+  return assetPaths;
+};
+
 export {
   createAsset,
   getAsset,
@@ -250,4 +272,5 @@ export {
   getChunkMd5sByProductId,
   getDepotDiffChunkMd5sByProductId,
   getOfflineChunkMd5s,
+  getPathsByPrefix,
 };
